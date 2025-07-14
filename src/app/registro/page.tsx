@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { testConnection, checkUserExists, UserData } from '@/lib/sanityClient'
+import { useState } from 'react'
+import { UserData } from '@/lib/sanityClient'
 import { useRouter } from 'next/navigation'
 
 interface FormData {
@@ -23,19 +23,6 @@ export default function RegistroPage() {
   })
   const [loading, setLoading] = useState<boolean>(false)
   const [error, setError] = useState<string>('')
-  const [connectionChecked, setConnectionChecked] = useState<boolean>(false)
-
-  useEffect(() => {
-    const checkConnection = async () => {
-      try {
-        await testConnection()
-      } catch (error) {
-        setError('Error al conectar con Sanity: ' + (error as Error).message)
-      }
-      setConnectionChecked(true)
-    }
-    checkConnection()
-  }, [])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value })
@@ -88,26 +75,10 @@ export default function RegistroPage() {
     if (!validateForm()) return
     setLoading(true)
     try {
-      const cedula: string = form.cedula.trim()
-      const correo: string = form.correo.trim().toLowerCase()
-      const existingUsers = await checkUserExists(cedula, correo)
-      if (existingUsers.length > 0) {
-        const existing = existingUsers[0]
-        if (existing.cedula === cedula) {
-          setError('Ya existe un usuario registrado con esta cédula')
-          setLoading(false)
-          return
-        }
-        if (existing.correo === correo) {
-          setError('Ya existe un usuario registrado con este correo')
-          setLoading(false)
-          return
-        }
-      }
       const userData: UserData = {
         nombreApellido: form.nombreApellido.trim(),
-        cedula: cedula,
-        correo: correo,
+        cedula: form.cedula.trim(),
+        correo: form.correo.trim().toLowerCase(),
         celular: form.celular.trim(),
         contrasena: form.contrasena
       }
@@ -116,9 +87,9 @@ export default function RegistroPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userData),
       })
+      const data = await response.json()
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Error al registrar usuario')
+        throw new Error(data.error || 'Error al registrar usuario')
       }
       setForm({
         nombreApellido: '',
@@ -134,17 +105,6 @@ export default function RegistroPage() {
       const errorMessage = (error as Error).message || String(error)
       setError('Error al registrar: ' + errorMessage)
     }
-  }
-
-  if (!connectionChecked) {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center bg-[#0b0f19] overflow-hidden">
-        <div className="max-w-md w-full p-6 bg-gray-800 rounded-lg text-white text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p>Conectando con Sanity...</p>
-        </div>
-      </div>
-    )
   }
 
   return (
