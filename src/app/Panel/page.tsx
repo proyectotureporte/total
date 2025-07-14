@@ -3,6 +3,12 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
+interface User {
+  _id: string
+  estadoDocumentacion?: string
+  motivoDenegacion?: string
+}
+
 export default function Panel() {
   const [tipoCedula, setTipoCedula] = useState<'foto' | 'documento'>('foto')
   const [cedulaFiles, setCedulaFiles] = useState<File[]>([])
@@ -13,7 +19,7 @@ export default function Panel() {
   const [audioUrl, setAudioUrl] = useState<string | null>(null)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [isUploading, setIsUploading] = useState(false)
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const router = useRouter()
 
@@ -103,7 +109,7 @@ export default function Panel() {
       mr.start()
       setMediaRecorder(mr)
       setRecording(true)
-    } catch (error) {
+    } catch {
       alert('Error al acceder al micrófono')
     }
   }
@@ -173,7 +179,7 @@ export default function Panel() {
         setIsUploading(false)
         alert('Error al subir archivos')
       }
-    } catch (error) {
+    } catch {
       setIsUploading(false)
       alert('Error al subir archivos')
     }
@@ -190,7 +196,7 @@ export default function Panel() {
   const handleLogout = () => {
     localStorage.removeItem('userId');
     router.replace('/');
-    };
+  };
 
   if (loading) return <div className="p-8 text-center">Cargando...</div>
   if (!user) return null
@@ -204,13 +210,13 @@ export default function Panel() {
           <p className="text-gray-600">Sube tus documentos de forma segura y rápida</p>
         </div>
         <div className="absolute top-4 right-4 z-50">
-  <button
-    onClick={handleLogout}
-    className="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded transition"
-  >
-    Cerrar sesión
-  </button>
-</div>
+          <button
+            onClick={handleLogout}
+            className="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded transition"
+          >
+            Cerrar sesión
+          </button>
+        </div>
 
         {/* Estado de documentación */}
         <div className="mb-6 bg-white rounded-xl p-4 shadow-sm">

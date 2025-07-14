@@ -5,7 +5,7 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
     const userId = formData.get('userId') as string
-    
+
     if (!userId) {
       return NextResponse.json({ error: 'No userId provided' }, { status: 400 })
     }
@@ -15,15 +15,9 @@ export async function POST(request: NextRequest) {
     const comprobantesFiles = formData.getAll('comprobantesFiles') as File[]
     const audioBlob = formData.get('audioBlob') as File | null
 
-    console.log('📁 Subiendo archivos para usuario:', userId)
-    console.log('📄 Cédula files:', cedulaFiles.length)
-    console.log('📋 Comprobantes files:', comprobantesFiles.length)
-    console.log('🎵 Audio:', audioBlob ? 'Sí' : 'No')
-
     // Subir archivos de cédula
     const cedulaAssets = await Promise.all(
-      cedulaFiles.map(async (file) => {
-        console.log('📄 Subiendo cédula:', file.name, file.type)
+      cedulaFiles.map(async (file: File) => {
         if (file.type.startsWith('image/')) {
           return await client.assets.upload('image', file, {
             filename: file.name
@@ -38,8 +32,7 @@ export async function POST(request: NextRequest) {
 
     // Subir archivos de comprobantes
     const comprobantesAssets = await Promise.all(
-      comprobantesFiles.map(async (file) => {
-        console.log('📋 Subiendo comprobante:', file.name, file.type)
+      comprobantesFiles.map(async (file: File) => {
         if (file.type.startsWith('image/')) {
           return await client.assets.upload('image', file, {
             filename: file.name
@@ -55,7 +48,6 @@ export async function POST(request: NextRequest) {
     // Subir audio
     let audioAsset = null
     if (audioBlob) {
-      console.log('🎵 Subiendo audio:', audioBlob.name, audioBlob.type)
       audioAsset = await client.assets.upload('file', audioBlob, {
         filename: audioBlob.name
       })
@@ -111,7 +103,7 @@ export async function POST(request: NextRequest) {
     } : undefined
 
     // Actualizar documento del usuario
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
       estadoDocumentacion: 'revision'
     }
 
@@ -127,16 +119,12 @@ export async function POST(request: NextRequest) {
       updateData.audioValidacion = audioReference
     }
 
-    console.log('💾 Actualizando usuario con:', updateData)
-
     await client
       .patch(userId)
       .set(updateData)
       .commit()
 
-    console.log('✅ Usuario actualizado exitosamente')
-
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
       message: 'Archivos subidos exitosamente',
       uploadedFiles: {
@@ -147,7 +135,6 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('❌ Error en upload:', error)
     return NextResponse.json(
       { error: 'Error al subir archivos: ' + (error as Error).message },
       { status: 500 }

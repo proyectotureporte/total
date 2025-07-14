@@ -5,19 +5,16 @@ export const client = createClient({
   dataset: 'production',
   apiVersion: '2023-05-03',
   useCdn: false,
-  token: process.env.SANITY_API_TOKEN, // Solo para backend
+  token: process.env.SANITY_API_TOKEN,
 })
 
-// Cliente público (sin token) para el frontend
 export const publicClient = createClient({
   projectId: 'p02io4ti',
   dataset: 'production',
   apiVersion: '2023-05-03',
-  useCdn: true, // Puede usar CDN para lectura
-  // Sin token - solo para consultas públicas
+  useCdn: true,
 })
 
-// Verificar configuración (solo en backend)
 console.log('Sanity Config:', {
   projectId: 'p02io4ti',
   dataset: 'production',
@@ -25,10 +22,9 @@ console.log('Sanity Config:', {
   tokenPrefix: process.env.SANITY_API_TOKEN?.substring(0, 10) + '...'
 })
 
-// Función helper para verificar la conexión (frontend)
 export const testConnection = async () => {
   try {
-    const result = await publicClient.fetch('*[_type == "registro"][0...1]')
+    await publicClient.fetch('*[_type == "registro"][0...1]')
     console.log('✅ Conexión a Sanity exitosa')
     return true
   } catch (error) {
@@ -37,19 +33,13 @@ export const testConnection = async () => {
   }
 }
 
-// Función para verificar usuario existente (frontend)
 export const checkUserExists = async (cedula: string, correo: string) => {
   console.log('🔍 Buscando usuario con cédula:', cedula, 'y correo:', correo)
-  
   try {
-    // Buscar por cédula
     const cedulaQuery = '*[_type == "registro" && cedula == $cedula]'
     const cedulaResults = await publicClient.fetch(cedulaQuery, { cedula })
-    
-    // Buscar por correo
     const correoQuery = '*[_type == "registro" && correo == $correo]'
     const correoResults = await publicClient.fetch(correoQuery, { correo })
-    
     return [...cedulaResults, ...correoResults]
   } catch (error) {
     console.error('❌ Error al verificar usuario:', error)
@@ -57,7 +47,6 @@ export const checkUserExists = async (cedula: string, correo: string) => {
   }
 }
 
-// Interfaces para TypeScript
 export interface UserData {
   nombreApellido: string
   cedula: string

@@ -7,7 +7,6 @@ import { Progress } from "@/components/ui/progress";
 interface UserData {
   nombreApellido?: string;
   estadoDocumentacion?: string;
-  // Otros campos si los necesitas
 }
 
 const etapasProceso = [
@@ -29,8 +28,6 @@ const cuotas = [
 
 export default function PanelPrincipal() {
   const [estadoDocumento, setEstadoDocumento] = useState("En revisión");
-  const [etapaActual, setEtapaActual] = useState(1);
-  const [subetapa, setSubetapa] = useState("Tutela");
   const [user, setUser] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -40,7 +37,7 @@ export default function PanelPrincipal() {
   useEffect(() => {
     const userId = localStorage.getItem('userId');
     if (!userId) {
-      router.replace('/'); // No logueado, al home
+      router.replace('/');
       return;
     }
     fetch(`/api/user?userId=${userId}`)
@@ -51,24 +48,21 @@ export default function PanelPrincipal() {
         if (data && data.estadoDocumentacion) {
           setEstadoDocumento(data.estadoDocumentacion);
         }
-        // Si el usuario no está validado, redirige a /Panel
         if (!data || data.estadoDocumentacion !== "validado") {
           router.replace('/Panel');
         }
       })
       .catch(() => {
         setLoading(false);
-        router.replace('/'); // Si hay error, al home
+        router.replace('/');
       });
   }, [router]);
 
-  // Botón para cerrar sesión
   const handleLogout = () => {
     localStorage.removeItem('userId');
     router.replace('/');
   };
 
-  // Mientras carga o si el usuario no está validado, no muestra nada
   if (loading || !user || user.estadoDocumentacion !== "validado") {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#0b0f19]">
@@ -116,12 +110,12 @@ export default function PanelPrincipal() {
           <h2 className="text-xl font-semibold mb-2">Progreso del proceso</h2>
           <ol className="list-decimal ml-6 space-y-1 text-gray-300">
             {etapasProceso.map((etapa, idx) => (
-              <li key={etapa} className={idx === etapaActual ? "text-blue-400 font-bold" : ""}>
+              <li key={etapa} className={idx === 1 ? "text-blue-400 font-bold" : ""}>
                 {etapa}
-                {etapa === "Gestión jurídica en curso" && idx === etapaActual && (
+                {etapa === "Gestión jurídica en curso" && idx === 1 && (
                   <ul className="ml-4 text-sm mt-1 list-disc">
                     {subetapasGestion.map(sub => (
-                      <li key={sub} className={sub === subetapa ? "text-green-400 font-semibold" : ""}>{sub}</li>
+                      <li key={sub} className={sub === "Tutela" ? "text-green-400 font-semibold" : ""}>{sub}</li>
                     ))}
                   </ul>
                 )}
