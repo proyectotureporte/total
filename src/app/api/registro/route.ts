@@ -10,6 +10,20 @@ export async function POST(request: NextRequest) {
     // Normaliza el correo a minúsculas
     const correo = userData.correo.trim().toLowerCase();
 
+    // Verifica si ya existe usuario con esa cédula o correo
+    const query = '*[_type == "registro" && (cedula == $cedula || correo == $correo)][0]'
+    const existing = await client.fetch(query, {
+      cedula: userData.cedula,
+      correo
+    })
+
+    if (existing) {
+      return NextResponse.json(
+        { error: 'Ya existe un usuario con esa cédula o correo' },
+        { status: 400 }
+      )
+    }
+
     // Hashea la contraseña
     const hashedPassword = await bcrypt.hash(userData.contrasena, 10)
 
