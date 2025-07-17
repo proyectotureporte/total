@@ -8,5 +8,6 @@ export default defineCliConfig({
   api: { 
     projectId: 'p02io4ti', 
     dataset: 'production' 
-  } 
+  },
+  studioHost: 'tureporte' // ← Agrega esta línea
 })

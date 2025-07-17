@@ -24,7 +24,7 @@ console.log('Sanity Config:', {
 
 export const testConnection = async () => {
   try {
-    await publicClient.fetch('*[_type == "registro"][0...1]')
+    await publicClient.fetch('*[_type == "registroaliado"][0...1]')
     console.log('✅ Conexión a Sanity exitosa')
     return true
   } catch (error) {
@@ -33,24 +33,59 @@ export const testConnection = async () => {
   }
 }
 
-export const checkUserExists = async (cedula: string, correo: string) => {
-  console.log('🔍 Buscando usuario con cédula:', cedula, 'y correo:', correo)
+// Verifica si ya existe un usuario aliado con esa cédula o correo
+export const checkUserAliadoExists = async (cedula: string, correo: string) => {
+  console.log('🔍 Buscando aliado con cédula:', cedula, 'y correo:', correo)
   try {
-    const cedulaQuery = '*[_type == "registro" && cedula == $cedula]'
+    const cedulaQuery = '*[_type == "registroaliado" && cedula == $cedula]'
     const cedulaResults = await publicClient.fetch(cedulaQuery, { cedula })
-    const correoQuery = '*[_type == "registro" && correo == $correo]'
+    const correoQuery = '*[_type == "registroaliado" && correo == $correo]'
     const correoResults = await publicClient.fetch(correoQuery, { correo })
     return [...cedulaResults, ...correoResults]
   } catch (error) {
-    console.error('❌ Error al verificar usuario:', error)
+    console.error('❌ Error al verificar aliado:', error)
     throw error
   }
 }
 
+// Modelo antiguo (puedes eliminarlo si ya no lo usas)
 export interface UserData {
   nombreApellido: string
   cedula: string
   correo: string
   celular: string
   contrasena: string
+}
+
+// NUEVO MODELO PARA EL FORMULARIO COMPLETO
+export interface UserDataaliado {
+  nombreApellido: string
+  cedula: string
+  correo: string
+  celular: string
+  ciudad: string
+  sectorTrabajo: string
+  cargo: string
+  experiencia: string
+  potencialClientes: string
+  edad: string
+  contrasena: string
+}
+
+// FUNCIÓN PARA GUARDAR EL NUEVO REGISTRO COMPLETO EN SANITY
+export const saveUserCompleto = async (user: UserDataaliado) => {
+  try {
+    const doc = {
+      _type: 'registroaliado', // ← Cambiado al nuevo schema
+      ...user,
+      // Guarda la fecha de registro automáticamente
+      fechaRegistro: new Date().toISOString(),
+    }
+    const result = await client.create(doc)
+    console.log('✅ Usuario aliado guardado en Sanity:', result)
+    return result
+  } catch (error) {
+    console.error('❌ Error al guardar usuario aliado:', error)
+    throw error
+  }
 }
