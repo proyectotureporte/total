@@ -29,6 +29,12 @@ export default defineType({
       type: 'string',
       validation: Rule => Rule.required()
     }),
+   defineField({
+      name: 'ciudad',
+      title: 'Ciudad',
+      type: 'string',
+      validation: Rule => Rule.required()
+    }),
     defineField({
       name: 'contrasena',
       title: 'Contraseña',

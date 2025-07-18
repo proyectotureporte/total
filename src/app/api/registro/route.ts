@@ -33,11 +33,13 @@ export async function POST(request: NextRequest) {
       cedula: userData.cedula,
       correo, // Guarda el correo normalizado
       celular: userData.celular,
+      ciudad: userData.ciudad,
       contrasena: hashedPassword,
       fechaRegistro: new Date().toISOString(),
       estadoDocumentacion: 'pendiente',
       motivoDenegacion: ''
     })
+    
     return NextResponse.json(newUser, { status: 201 })
   } catch (error) {
     return NextResponse.json(

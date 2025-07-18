@@ -54,6 +54,7 @@ export interface UserData {
   cedula: string
   correo: string
   celular: string
+  ciudad: string
   contrasena: string
 }
 

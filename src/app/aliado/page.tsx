@@ -27,7 +27,7 @@ en cada paso.
           </p>
           <div>
             <a
-              href="/registro"
+              href="/registroaliado"
               className="bg-gradient-to-r from-purple-500 to-blue-500 text-white px-8 py-3 rounded-full text-lg font-medium hover:opacity-90 transition"
             >
               Empezar
