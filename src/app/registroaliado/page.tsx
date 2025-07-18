@@ -321,8 +321,8 @@ export default function RegistroPage() {
               id="experiencia"
               type="number"
               name="experiencia"
-              placeholder="Años de experiencia"
-              value={form.experiencia}
+              placeholder="0"
+              value={form.experiencia === 0 ? '' : form.experiencia}
               onChange={handleChange}
               required
               min={0}
