@@ -44,7 +44,7 @@ export default function RegistroPage() {
   const [error, setError] = useState<string>('')
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target
+    const { name, value } = e.target
     setForm(prev => ({
       ...prev,
       [name]:
