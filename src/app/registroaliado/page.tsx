@@ -425,7 +425,7 @@ export default function RegistroPage() {
             <div className="text-center">
               <span className="text-gray-400 text-sm">¿Ya tienes cuenta? </span>
               <a
-                href="/login"
+                href="/loginaliado"
                 className="text-sm text-blue-400 hover:text-blue-300 hover:underline font-semibold transition-colors"
               >
                 Inicia sesión
