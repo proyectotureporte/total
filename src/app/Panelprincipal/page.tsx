@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Progress } from "@/components/ui/progress";
 
@@ -30,7 +30,9 @@ export default function PanelPrincipal() {
   const [estadoDocumento, setEstadoDocumento] = useState("En revisión");
   const [user, setUser] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [menuAbierto, setMenuAbierto] = useState(false);
   const router = useRouter();
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const progresoPagos = (cuotas.filter(q => q.pagado).length / cuotas.length) * 100;
 
@@ -58,9 +60,30 @@ export default function PanelPrincipal() {
       });
   }, [router]);
 
+  // Cerrar menú al hacer clic fuera
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMenuAbierto(false);
+      }
+    };
+
+    if (menuAbierto) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [menuAbierto]);
+
   const handleLogout = () => {
     localStorage.removeItem('userId');
     router.replace('/');
+  };
+
+  const toggleMenu = () => {
+    setMenuAbierto(!menuAbierto);
   };
 
   if (loading || !user || user.estadoDocumentacion !== "validado") {
@@ -73,9 +96,47 @@ export default function PanelPrincipal() {
 
   return (
     <div className="flex min-h-screen text-white bg-[#0b0f19]">
+      {/* Botón hamburguesa para móvil */}
+      <button
+        onClick={toggleMenu}
+        className="md:hidden fixed top-4 left-4 z-50 bg-[#111827] p-2 rounded-lg hover:bg-[#1f2937] transition-colors"
+      >
+        <div className="flex items-center space-x-2">
+          <div className="flex flex-col space-y-1">
+            <div className="w-5 h-0.5 bg-white"></div>
+            <div className="w-5 h-0.5 bg-white"></div>
+            <div className="w-5 h-0.5 bg-white"></div>
+          </div>
+          <span className="text-sm font-medium">MENU</span>
+        </div>
+      </button>
+
+      {/* Overlay para móvil */}
+      {menuAbierto && (
+        <div className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-40"></div>
+      )}
+
       {/* Menú lateral */}
-      <aside className="w-64 bg-[#111827] p-6 space-y-6">
-        <h2 className="text-xl font-bold">Menú</h2>
+      <aside
+        ref={menuRef}
+        className={`
+          w-64 bg-[#111827] p-6 space-y-6 
+          md:block md:relative md:translate-x-0
+          fixed top-0 left-0 h-full z-50 transition-transform duration-300 ease-in-out
+          ${menuAbierto ? 'translate-x-0' : '-translate-x-full'}
+        `}
+      >
+        {/* Botón cerrar para móvil */}
+        <button
+          onClick={toggleMenu}
+          className="md:hidden absolute top-4 right-4 text-white hover:text-gray-300 transition-colors"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
+        <h2 className="text-xl font-bold mt-8 md:mt-0">Menú</h2>
         <nav className="space-y-4">
           <a href="#" className="block hover:text-blue-400">📄 Documentos</a>
           <ul className="ml-4 text-sm space-y-2">
@@ -94,7 +155,7 @@ export default function PanelPrincipal() {
       </aside>
 
       {/* Panel principal */}
-      <main className="flex-1 p-10 space-y-10 max-w-5xl">
+      <main className="flex-1 p-10 space-y-10 max-w-5xl md:ml-0 pt-20 md:pt-10">
         <h1 className="text-3xl font-bold">
           Bienvenido, {user?.nombreApellido || 'Usuario'}
         </h1>
