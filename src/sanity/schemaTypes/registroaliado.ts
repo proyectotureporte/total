@@ -5,15 +5,17 @@ export default defineType({
   title: 'Registro Aliado',
   type: 'document',
   fields: [
-    // Campo nuevo para ID único de aliado
+    // Campo ID único de aliado
     defineField({
       name: 'aliadoId',
       title: 'ID de Aliado',
       type: 'string',
-      validation: Rule => Rule.required(),
-      readOnly: true, // Solo lectura, se genera automáticamente
+      validation: Rule => Rule.required().regex(/^AR-\d{4}$/).error('Debe tener formato AR-0000'),
+      readOnly: true,
       description: 'ID único generado automáticamente (AR-XXXX)'
     }),
+    
+    // INFORMACIÓN PERSONAL
     defineField({
       name: 'nombreApellido',
       title: 'Nombre y Apellido',
@@ -25,7 +27,7 @@ export default defineType({
       name: 'cedula',
       title: 'Cédula',
       type: 'string',
-      validation: Rule => Rule.required().min(6).max(15),
+      validation: Rule => Rule.required().regex(/^\d{7,10}$/).error('Debe tener entre 7 y 10 dígitos'),
       description: 'Número de identificación'
     }),
     defineField({
@@ -39,7 +41,7 @@ export default defineType({
       name: 'celular',
       title: 'Celular',
       type: 'string',
-      validation: Rule => Rule.required().min(10).max(15),
+      validation: Rule => Rule.required().regex(/^\d{10}$/).error('Debe tener exactamente 10 dígitos'),
       description: 'Número de teléfono celular'
     }),
     defineField({
@@ -49,6 +51,8 @@ export default defineType({
       validation: Rule => Rule.required().min(2).max(50),
       description: 'Ciudad de residencia'
     }),
+    
+    // INFORMACIÓN PROFESIONAL
     defineField({
       name: 'sectorTrabajo',
       title: 'Sector de Trabajo',
@@ -56,14 +60,14 @@ export default defineType({
       validation: Rule => Rule.required(),
       options: {
         list: [
-          { title: 'Financiero', value: 'financiero' },
-          { title: 'Seguros', value: 'seguros' },
-          { title: 'Inmobiliaria', value: 'inmobiliaria' },
-          { title: 'Consultoría', value: 'consultoria' },
-          { title: 'Tecnología', value: 'tecnologia' },
-          { title: 'Salud', value: 'salud' },
-          { title: 'Educación', value: 'educacion' },
-          { title: 'Otros', value: 'otros' }
+          { title: 'Financiero', value: 'Financiero' },
+          { title: 'Seguros', value: 'Seguros' },
+          { title: 'Inmobiliaria', value: 'Inmobiliaria' },
+          { title: 'Consultoría', value: 'Consultoría' },
+          { title: 'Tecnología', value: 'Tecnología' },
+          { title: 'Salud', value: 'Salud' },
+          { title: 'Educación', value: 'Educación' },
+          { title: 'Otros', value: 'Otros' }
         ],
         layout: 'dropdown'
       },
@@ -76,20 +80,19 @@ export default defineType({
       validation: Rule => Rule.required(),
       options: {
         list: [
-          { title: 'Asesor', value: 'asesor' },
-          { title: 'Gerente', value: 'gerente' },
-          { title: 'Director', value: 'director' },
-          { title: 'Coordinador', value: 'coordinador' },
-          { title: 'Auxiliar', value: 'auxiliar' },
-          { title: 'Consultor', value: 'consultor' },
-          { title: 'Analista', value: 'analista' },
-          { title: 'Otro', value: 'otro' }
+          { title: 'Asesor', value: 'Asesor' },
+          { title: 'Gerente', value: 'Gerente' },
+          { title: 'Director', value: 'Director' },
+          { title: 'Coordinador', value: 'Coordinador' },
+          { title: 'Auxiliar', value: 'Auxiliar' },
+          { title: 'Consultor', value: 'Consultor' },
+          { title: 'Analista', value: 'Analista' },
+          { title: 'Otro', value: 'Otro' }
         ],
         layout: 'dropdown'
       },
       description: 'Cargo actual en su trabajo'
     }),
-    // Cambio de number a string para consistencia con la API
     defineField({
       name: 'experiencia',
       title: 'Años de Experiencia',
@@ -125,7 +128,6 @@ export default defineType({
       },
       description: 'Estimación de clientes potenciales por mes'
     }),
-    // Cambio de number a string para consistencia con la API
     defineField({
       name: 'edad',
       title: 'Edad',
@@ -144,21 +146,23 @@ export default defineType({
       },
       description: 'Rango de edad del aliado'
     }),
+    
+    // SEGURIDAD
     defineField({
       name: 'contrasena',
       title: 'Contraseña (Hash)',
       type: 'string',
       validation: Rule => Rule.required(),
-      readOnly: true, // Solo lectura, se maneja desde la API
+      readOnly: true,
       description: 'Contraseña hasheada con bcrypt'
     }),
     
-    // === CAMPOS ADMINISTRATIVOS ===
+    // CAMPOS ADMINISTRATIVOS
     defineField({
       name: 'fechaRegistro',
       title: 'Fecha de Registro',
       type: 'datetime',
-      initialValue: () => new Date().toISOString(),
+      validation: Rule => Rule.required(),
       readOnly: true,
       description: 'Fecha y hora de registro automática'
     }),
@@ -176,6 +180,7 @@ export default defineType({
         layout: 'radio'
       },
       initialValue: 'pendiente',
+      validation: Rule => Rule.required(),
       description: 'Estado actual de la documentación del aliado'
     }),
     defineField({
@@ -187,7 +192,7 @@ export default defineType({
       description: 'Razón específica si la documentación fue denegada'
     }),
     
-    // === CAMPOS DE ARCHIVOS ===
+    // CAMPOS DE ARCHIVOS (para futuro uso)
     defineField({
       name: 'cedulaArchivo',
       title: 'Archivos de Cédula',
@@ -238,7 +243,7 @@ export default defineType({
       description: 'Audio de validación del aliado'
     }),
 
-    // === CAMPOS ADICIONALES ÚTILES ===
+    // CAMPOS ADICIONALES
     defineField({
       name: 'notas',
       title: 'Notas Administrativas',
@@ -260,20 +265,52 @@ export default defineType({
       type: 'datetime',
       readOnly: true,
       description: 'Última vez que se modificó el registro'
+    }),
+    
+    // CAMPOS DE CONTROL DE ACCESO
+    defineField({
+      name: 'activo',
+      title: 'Usuario Activo',
+      type: 'boolean',
+      initialValue: true,
+      description: 'Si el usuario puede acceder al sistema'
+    }),
+    defineField({
+      name: 'intentosFallidos',
+      title: 'Intentos de Login Fallidos',
+      type: 'number',
+      initialValue: 0,
+      readOnly: true,
+      description: 'Contador de intentos de login fallidos'
+    }),
+    defineField({
+      name: 'ultimoAcceso',
+      title: 'Último Acceso',
+      type: 'datetime',
+      readOnly: true,
+      description: 'Última vez que el usuario inició sesión'
     })
   ],
   
-  // Configuración de vista previa
+  // Configuración de vista previa - CORREGIDA
   preview: {
     select: {
       title: 'nombreApellido',
       subtitle: 'aliadoId',
+      estado: 'estadoDocumentacion',
       media: 'cedulaArchivo.0'
     },
-    prepare({ title, subtitle }) {
+    prepare({ title, subtitle, estado }) {
+      const estadoEmoji = {
+        pendiente: '🟡',
+        revision: '🔵', 
+        aprobado: '🟢',
+        denegado: '🔴'
+      }
+      
       return {
         title: title || 'Sin nombre',
-        subtitle: `ID: ${subtitle || 'Sin asignar'}`,
+        subtitle: `${subtitle || 'Sin ID'} - ${estadoEmoji[estado as keyof typeof estadoEmoji] || '⚪'} ${estado || 'Sin estado'}`,
       }
     }
   },
@@ -294,6 +331,11 @@ export default defineType({
       title: 'Estado',
       name: 'estadoAsc',
       by: [{ field: 'estadoDocumentacion', direction: 'asc' }]
+    },
+    {
+      title: 'Nombre',
+      name: 'nombreAsc',
+      by: [{ field: 'nombreApellido', direction: 'asc' }]
     }
   ]
 })

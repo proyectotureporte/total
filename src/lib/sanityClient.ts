@@ -106,37 +106,61 @@ export interface AliadoDocument extends Omit<UserDataaliado, 'contrasena'> {
   motivoDenegacion?: string
 }
 
-// Función para crear un nuevo aliado (optimizada)
+// Función para crear un nuevo aliado (CORREGIDA)
 export const createAliado = async (
   userData: UserDataaliado, 
   aliadoId: string, 
   hashedPassword: string
 ): Promise<AliadoDocument> => {
   try {
+    // CORRECCIÓN: Asegurar que todos los campos estén presentes y no sean undefined
     const doc: Omit<AliadoDocument, '_id' | '_createdAt' | '_updatedAt'> = {
       _type: 'registroaliado',
       aliadoId,
-      nombreApellido: userData.nombreApellido.trim(),
-      cedula: userData.cedula.trim(),
-      correo: userData.correo.trim().toLowerCase(),
-      celular: userData.celular.trim(),
-      ciudad: userData.ciudad.trim(),
-      sectorTrabajo: userData.sectorTrabajo.trim(),
-      cargo: userData.cargo.trim(),
-      experiencia: userData.experiencia.trim(),
-      potencialClientes: userData.potencialClientes.trim(),
-      edad: userData.edad.trim(),
+      nombreApellido: userData.nombreApellido?.trim() || '',
+      cedula: userData.cedula?.trim() || '',
+      correo: userData.correo?.trim().toLowerCase() || '',
+      celular: userData.celular?.trim() || '',
+      ciudad: userData.ciudad?.trim() || '',
+      sectorTrabajo: userData.sectorTrabajo?.trim() || '', // CORRECCIÓN: Asegurar que no sea undefined
+      cargo: userData.cargo?.trim() || '', // CORRECCIÓN: Asegurar que no sea undefined
+      experiencia: userData.experiencia?.trim() || '',
+      potencialClientes: userData.potencialClientes?.trim() || '',
+      edad: userData.edad?.trim() || '',
       contrasena: hashedPassword,
       fechaRegistro: new Date().toISOString(),
       estadoDocumentacion: 'pendiente',
       motivoDenegacion: ''
     }
     
+    // Debug: Verificar que todos los campos estén presentes antes de enviar
+    console.log('📋 Documento a crear en Sanity:', {
+      ...doc,
+      contrasena: '[HASH_OCULTO]'
+    })
+
+    // Verificar campos críticos antes de crear
+    if (!doc.sectorTrabajo) {
+      throw new Error('sectorTrabajo no puede estar vacío')
+    }
+    if (!doc.cargo) {
+      throw new Error('cargo no puede estar vacío')
+    }
+    
     const result = await client.create(doc) as AliadoDocument
     console.log('✅ Usuario aliado guardado en Sanity:', result._id)
+    
+    // Verificar que los campos se guardaron correctamente
+    console.log('✅ Campos guardados - sectorTrabajo:', result.sectorTrabajo, 'cargo:', result.cargo)
+    
     return result
   } catch (error) {
     console.error('❌ Error al crear aliado:', error)
+    // Log adicional para debug
+    if (error instanceof Error) {
+      console.error('❌ Mensaje de error:', error.message)
+      console.error('❌ Stack trace:', error.stack)
+    }
     throw error
   }
 }

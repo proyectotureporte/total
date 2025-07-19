@@ -5,8 +5,17 @@ import { useRouter } from 'next/navigation'
 
 interface User {
   _id: string
+  nombreApellido?: string
+  aliadoId?: string
   estadoDocumentacion?: string
   motivoDenegacion?: string
+}
+
+function capitalizarNombre(nombre: string = '') {
+  return nombre
+    .split(' ')
+    .map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase())
+    .join(' ')
 }
 
 export default function Panel() {
@@ -44,7 +53,7 @@ export default function Panel() {
 
   // Redirigir si está validado
   useEffect(() => {
-    if (user && user.estadoDocumentacion === 'validado') {
+    if (user && user.estadoDocumentacion === 'aprobado') {
       router.push('/Panelprincipalaliado')
     }
   }, [user, router])
@@ -79,7 +88,6 @@ export default function Panel() {
       'audio/mp4',
       'audio/mpeg'
     ]
-    
     for (const type of types) {
       if (MediaRecorder.isTypeSupported(type)) {
         return type
@@ -99,7 +107,6 @@ export default function Panel() {
       const mimeType = getSupportedMimeType()
       const mr = new MediaRecorder(stream, { mimeType })
       const chunks: BlobPart[] = []
-      
       mr.ondataavailable = e => chunks.push(e.data)
       mr.onstop = () => {
         const blob = new Blob(chunks, { type: mimeType })
@@ -136,10 +143,8 @@ export default function Panel() {
     // Construir FormData para enviar archivos y userId
     const formData = new FormData()
     formData.append('userId', user._id)
-    
     cedulaFiles.forEach(f => formData.append('cedulaFiles', f))
     comprobantesFiles.forEach(f => formData.append('comprobantesFiles', f))
-    
     if (audioBlob) {
       // Crear archivo con extensión correcta según el tipo MIME
       const getExtension = (mimeType: string) => {
@@ -148,7 +153,6 @@ export default function Panel() {
         if (mimeType.includes('mp4')) return 'm4a'
         return 'webm'
       }
-      
       const extension = getExtension(audioBlob.type)
       const audioFile = new File([audioBlob], `audio.${extension}`, { type: audioBlob.type })
       formData.append('audioBlob', audioFile)
@@ -206,7 +210,17 @@ export default function Panel() {
       <div className="max-w-4xl mx-auto px-6">
         {/* Header */}
         <div className="text-center mb-10">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">Panel de Usuario</h1>
+          <h1 className="text-4xl font-bold text-gray-800 mb-2">
+            Panel de Documentación
+            {user && (
+              <>
+                {" - "}
+                {capitalizarNombre(user.nombreApellido || '')}
+                {" - "}
+                {user.aliadoId}
+              </>
+            )}
+          </h1>
           <p className="text-gray-600">Sube tus documentos de forma segura y rápida</p>
         </div>
         <div className="absolute top-4 right-4 z-50">
@@ -223,7 +237,7 @@ export default function Panel() {
           <p className="text-sm text-gray-600">
             Estado de documentación:{" "}
             <span className={`font-semibold ${
-              user.estadoDocumentacion === 'validado' ? 'text-green-600' :
+              user.estadoDocumentacion === 'aprobado' ? 'text-green-600' :
               user.estadoDocumentacion === 'denegado' ? 'text-red-600' :
               user.estadoDocumentacion === 'revision' ? 'text-yellow-600' : 'text-gray-600'
             }`}>
@@ -237,7 +251,7 @@ export default function Panel() {
           )}
         </div>
         {(user.estadoDocumentacion === 'pendiente' || user.estadoDocumentacion === 'revision' || user.estadoDocumentacion === 'denegado') && (
-        <div className="grid gap-8">
+          <div className="grid gap-8">
           {/* Sección Cédula */}
           <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-100">
             <div className="flex items-center mb-6">

@@ -1,204 +1,227 @@
-import { createClient } from '@sanity/client'
+import { NextRequest, NextResponse } from 'next/server'
+import { checkUserAliadoExists, createAliado, getLastAliadoId } from '@/lib/sanityClient'
+import { UserDataaliado } from '@/lib/sanityClient'
+import bcrypt from 'bcryptjs'
 
-// Cliente principal con token para operaciones de escritura
-export const client = createClient({
-  projectId: 'p02io4ti',
-  dataset: 'production',
-  apiVersion: '2023-05-03',
-  useCdn: false,
-  token: process.env.SANITY_API_TOKEN,
-})
-
-// Cliente público para operaciones de solo lectura
-export const publicClient = createClient({
-  projectId: 'p02io4ti',
-  dataset: 'production',
-  apiVersion: '2023-05-03',
-  useCdn: true,
-})
-
-// Log de configuración (solo en desarrollo)
-if (process.env.NODE_ENV === 'development') {
-  console.log('Sanity Config:', {
-    projectId: 'p02io4ti',
-    dataset: 'production',
-    hasToken: !!process.env.SANITY_API_TOKEN,
-    tokenPrefix: process.env.SANITY_API_TOKEN?.substring(0, 10) + '...'
-  })
-}
-
-// Función para probar la conexión
-export const testConnection = async (): Promise<boolean> => {
+// Función mejorada para generar el siguiente ID de aliado
+async function generateNextAliadoId(): Promise<string> {
   try {
-    await publicClient.fetch('*[_type == "registroaliado"][0...1]')
-    console.log('✅ Conexión a Sanity exitosa')
-    return true
-  } catch (error) {
-    console.error('❌ Error de conexión a Sanity:', error)
-    return false
-  }
-}
-
-// Función mejorada para verificar usuarios existentes
-export const checkUserAliadoExists = async (cedula: string, correo: string): Promise<AliadoDocument[]> => {
-  console.log('🔍 Buscando aliado con cédula:', cedula, 'y correo:', correo)
-  try {
-    // Query optimizada que busca ambos campos en una sola consulta
-    const query = '*[_type == "registroaliado" && (cedula == $cedula || correo == $correo)]'
-    const results: AliadoDocument[] = await publicClient.fetch(query, { 
-      cedula: cedula.trim(), 
-      correo: correo.trim().toLowerCase() 
-    })
-    return results
-  } catch (error) {
-    console.error('❌ Error al verificar aliado:', error)
-    throw error
-  }
-}
-
-// Función para obtener el último ID de aliado (optimizada)
-export const getLastAliadoId = async (): Promise<string | null> => {
-  try {
-    const query = '*[_type == "registroaliado" && defined(aliadoId)] | order(aliadoId desc)[0] { aliadoId }'
-    const result = await publicClient.fetch(query)
-    return result?.aliadoId || null
-  } catch (error) {
-    console.error('❌ Error al obtener último ID de aliado:', error)
-    return null
-  }
-}
-
-// Interfaz para el modelo básico (mantener por compatibilidad)
-export interface UserData {
-  nombreApellido: string
-  cedula: string
-  correo: string
-  celular: string
-  ciudad: string
-  contrasena: string
-}
-
-// Interfaz principal para aliados
-export interface UserDataaliado {
-  nombreApellido: string
-  cedula: string
-  correo: string
-  celular: string
-  ciudad: string
-  sectorTrabajo: string
-  cargo: string
-  experiencia: string
-  potencialClientes: string
-  edad: string
-  contrasena: string
-}
-
-// Interfaz para el documento completo en Sanity
-export interface AliadoDocument extends Omit<UserDataaliado, 'contrasena'> {
-  _id?: string
-  _type: 'registroaliado'
-  _createdAt?: string
-  _updatedAt?: string
-  aliadoId: string
-  contrasena: string
-  fechaRegistro: string
-  estadoDocumentacion: 'pendiente' | 'aprobado' | 'denegado'
-  motivoDenegacion?: string
-}
-
-// Función para crear un nuevo aliado (optimizada)
-export const createAliado = async (
-  userData: UserDataaliado, 
-  aliadoId: string, 
-  hashedPassword: string
-): Promise<AliadoDocument> => {
-  try {
-    const doc: Omit<AliadoDocument, '_id' | '_createdAt' | '_updatedAt'> = {
-      _type: 'registroaliado',
-      aliadoId,
-      nombreApellido: userData.nombreApellido.trim(),
-      cedula: userData.cedula.trim(),
-      correo: userData.correo.trim().toLowerCase(),
-      celular: userData.celular.trim(),
-      ciudad: userData.ciudad.trim(),
-      sectorTrabajo: userData.sectorTrabajo.trim(),
-      cargo: userData.cargo.trim(),
-      experiencia: userData.experiencia.trim(),
-      potencialClientes: userData.potencialClientes.trim(),
-      edad: userData.edad.trim(),
-      contrasena: hashedPassword,
-      fechaRegistro: new Date().toISOString(),
-      estadoDocumentacion: 'pendiente',
-      motivoDenegacion: ''
+    const lastId = await getLastAliadoId()
+    
+    let nextNumber: number
+    
+    if (!lastId) {
+      // Si no hay aliados registrados, empezar desde 150
+      nextNumber = 150
+    } else {
+      // Extraer el número del último ID (AR-0150 -> 150)
+      const lastIdNumber = parseInt(lastId.replace('AR-', ''))
+      nextNumber = lastIdNumber + 1
     }
     
-    const result = await client.create(doc) as AliadoDocument
-    console.log('✅ Usuario aliado guardado en Sanity:', result._id)
-    return result
+    // Formatear el número con ceros a la izquierda (AR-0150)
+    const formattedId = `AR-${nextNumber.toString().padStart(4, '0')}`
+    
+    console.log('🆔 Nuevo ID generado:', formattedId)
+    return formattedId
   } catch (error) {
-    console.error('❌ Error al crear aliado:', error)
-    throw error
+    console.error('❌ Error al generar ID de aliado:', error)
+    // Si hay error, generar un ID basado en timestamp como fallback
+    const timestamp = Date.now().toString().slice(-4)
+    return `AR-${timestamp.padStart(4, '0')}`
   }
 }
 
-// Función para buscar aliado por credenciales (útil para login)
-export const findAliadoByCredentials = async (correo: string) => {
+// Función para validar datos del frontend
+function validateUserData(userData: UserDataaliado): string[] {
+  const errors: string[] = []
+  
+  // Validaciones básicas
+  if (!userData.nombreApellido?.trim()) errors.push('Nombre y apellido requerido')
+  if (!userData.cedula?.trim()) errors.push('Cédula requerida')
+  if (!userData.correo?.trim()) errors.push('Correo requerido')
+  if (!userData.celular?.trim()) errors.push('Celular requerido')
+  if (!userData.ciudad?.trim()) errors.push('Ciudad requerida')
+  if (!userData.sectorTrabajo?.trim()) errors.push('Sector de trabajo requerido')
+  if (!userData.cargo?.trim()) errors.push('Cargo requerido')
+  if (!userData.experiencia?.trim()) errors.push('Experiencia requerida')
+  if (!userData.potencialClientes?.trim()) errors.push('Potencial de clientes requerido')
+  if (!userData.edad?.trim()) errors.push('Edad requerida')
+  if (!userData.contrasena?.trim()) errors.push('Contraseña requerida')
+  
+  // Validaciones de formato
+  if (userData.cedula && !/^\d{7,10}$/.test(userData.cedula)) {
+    errors.push('Cédula debe tener entre 7 y 10 dígitos')
+  }
+  
+  if (userData.correo && !/\S+@\S+\.\S+/.test(userData.correo)) {
+    errors.push('Formato de correo inválido')
+  }
+  
+  if (userData.celular && !/^\d{10}$/.test(userData.celular)) {
+    errors.push('Celular debe tener 10 dígitos')
+  }
+  
+  if (userData.contrasena && userData.contrasena.length < 6) {
+    errors.push('Contraseña debe tener al menos 6 caracteres')
+  }
+  
+  return errors
+}
+
+export async function POST(request: NextRequest) {
   try {
-    const query = '*[_type == "registroaliado" && correo == $correo][0]'
-    const result = await publicClient.fetch(query, { 
-      correo: correo.trim().toLowerCase() 
+    console.log('🚀 Iniciando registro de aliado...')
+    
+    // Parsear los datos del request
+    const userData: UserDataaliado = await request.json()
+    console.log('📝 Datos recibidos:', {
+      ...userData,
+      contrasena: '[OCULTA]'
     })
-    return result
-  } catch (error) {
-    console.error('❌ Error al buscar aliado por credenciales:', error)
-    throw error
-  }
-}
 
-// Función para actualizar estado de documentación
-export const updateAliadoStatus = async (
-  aliadoId: string, 
-  status: 'pendiente' | 'aprobado' | 'denegado',
-  motivoDenegacion?: string
-) => {
-  try {
-    const query = '*[_type == "registroaliado" && aliadoId == $aliadoId][0]'
-    const aliado = await client.fetch(query, { aliadoId })
-    
-    if (!aliado) {
-      throw new Error('Aliado no encontrado')
+    // Validar datos de entrada
+    const validationErrors = validateUserData(userData)
+    if (validationErrors.length > 0) {
+      console.log('❌ Errores de validación:', validationErrors)
+      return NextResponse.json(
+        { error: `Datos inválidos: ${validationErrors.join(', ')}` },
+        { status: 400 }
+      )
     }
+
+    // Normalizar datos - ASEGURAR QUE TODOS LOS CAMPOS ESTÉN PRESENTES
+    const normalizedData = {
+      nombreApellido: userData.nombreApellido?.trim() || '',
+      cedula: userData.cedula?.trim() || '',
+      correo: userData.correo?.trim().toLowerCase() || '',
+      celular: userData.celular?.trim() || '',
+      ciudad: userData.ciudad?.trim() || '',
+      sectorTrabajo: userData.sectorTrabajo?.trim() || '', // CORRECCIÓN: Asegurar que no sea undefined
+      cargo: userData.cargo?.trim() || '', // CORRECCIÓN: Asegurar que no sea undefined
+      experiencia: userData.experiencia?.trim() || '',
+      potencialClientes: userData.potencialClientes?.trim() || '',
+      edad: userData.edad?.trim() || '',
+      contrasena: userData.contrasena?.trim() || ''
+    }
+
+    // Debug: Verificar datos normalizados
+    console.log('📋 Datos normalizados:', {
+      ...normalizedData,
+      contrasena: '[OCULTA]'
+    })
+
+    // Verificar que sectorTrabajo y cargo no estén vacíos después de normalizar
+    if (!normalizedData.sectorTrabajo) {
+      console.log('❌ sectorTrabajo está vacío después de normalizar')
+      return NextResponse.json(
+        { error: 'El sector de trabajo es obligatorio' },
+        { status: 400 }
+      )
+    }
+
+    if (!normalizedData.cargo) {
+      console.log('❌ cargo está vacío después de normalizar')
+      return NextResponse.json(
+        { error: 'El cargo es obligatorio' },
+        { status: 400 }
+      )
+    }
+
+    // Verificar si ya existe usuario con esa cédula o correo
+    console.log('🔍 Verificando si el usuario ya existe...')
+    const existingUsers = await checkUserAliadoExists(normalizedData.cedula, normalizedData.correo)
     
-    const result = await client
-      .patch(aliado._id)
-      .set({ 
-        estadoDocumentacion: status,
-        motivoDenegacion: motivoDenegacion || ''
-      })
-      .commit()
+    if (existingUsers && existingUsers.length > 0) {
+      const existingUser = existingUsers[0]
+      let errorMessage = 'Usuario ya registrado: '
       
-    console.log('✅ Estado de aliado actualizado:', result._id)
-    return result
-  } catch (error) {
-    console.error('❌ Error al actualizar estado de aliado:', error)
-    throw error
-  }
-}
-
-// FUNCIÓN LEGACY - Mantener por compatibilidad (pero marcada como deprecated)
-/** @deprecated Usa createAliado en su lugar */
-export const saveUserCompleto = async (user: UserDataaliado) => {
-  try {
-    const doc = {
-      _type: 'registroaliado',
-      ...user,
-      fechaRegistro: new Date().toISOString(),
+      if (existingUser.cedula === normalizedData.cedula) {
+        errorMessage += 'cédula ya existe'
+      }
+      if (existingUser.correo === normalizedData.correo) {
+        errorMessage += existingUser.cedula === normalizedData.cedula ? 
+          ' y correo ya existe' : 'correo ya existe'
+      }
+      
+      console.log('⚠️ Usuario duplicado encontrado:', errorMessage)
+      return NextResponse.json(
+        { error: errorMessage },
+        { status: 409 } // Conflict
+      )
     }
-    const result = await client.create(doc)
-    console.log('✅ Usuario aliado guardado en Sanity:', result)
-    return result
+
+    // Generar el siguiente ID de aliado
+    console.log('🆔 Generando ID de aliado...')
+    const aliadoId = await generateNextAliadoId()
+
+    // Hashear la contraseña
+    console.log('🔒 Hasheando contraseña...')
+    const hashedPassword = await bcrypt.hash(normalizedData.contrasena, 12)
+
+    // Crear el nuevo usuario utilizando la función optimizada
+    console.log('💾 Guardando usuario en Sanity...')
+    const newUser = await createAliado(normalizedData, aliadoId, hashedPassword)
+
+    console.log('✅ Usuario creado exitosamente:', newUser._id)
+
+    
+
+    // Respuesta exitosa
+    return NextResponse.json({
+      success: true,
+      message: 'Usuario registrado exitosamente',
+      aliadoId: newUser.aliadoId,
+      usuario: {
+        id: newUser._id,
+        aliadoId: newUser.aliadoId,
+        nombreApellido: newUser.nombreApellido,
+        correo: newUser.correo,
+        sectorTrabajo: newUser.sectorTrabajo, // Incluir en respuesta para debug
+        cargo: newUser.cargo, // Incluir en respuesta para debug
+        fechaRegistro: newUser.fechaRegistro,
+        estadoDocumentacion: newUser.estadoDocumentacion
+      }
+    }, { status: 201 })
+
   } catch (error) {
-    console.error('❌ Error al guardar usuario aliado:', error)
-    throw error
+    console.error('❌ Error en registro de aliado:', error)
+    
+    // Manejo de errores más específico
+    if (error instanceof Error) {
+      // Error de Sanity
+      if (error.message.includes('Document with ID')) {
+        return NextResponse.json(
+          { error: 'Error de base de datos: documento duplicado' },
+          { status: 409 }
+        )
+      }
+      
+      // Error de validación de Sanity
+      if (error.message.includes('validation')) {
+        console.log('❌ Error de validación de Sanity:', error.message)
+        return NextResponse.json(
+          { error: 'Error de validación de datos en la base de datos' },
+          { status: 400 }
+        )
+      }
+      
+      // Error de conexión
+      if (error.message.includes('fetch') || error.message.includes('network')) {
+        return NextResponse.json(
+          { error: 'Error de conexión con la base de datos' },
+          { status: 503 }
+        )
+      }
+    }
+    
+    // Error genérico
+    return NextResponse.json(
+      { 
+        error: 'Error interno del servidor',
+        details: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
+      },
+      { status: 500 }
+    )
   }
 }

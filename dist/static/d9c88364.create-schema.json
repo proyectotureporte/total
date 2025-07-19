@@ -1,0 +1,1201 @@
+[
+  {
+    "of": [
+      {
+        "marks": {
+          "annotations": [
+            {
+              "fields": [
+                {
+                  "validation": [
+                    {
+                      "rules": [
+                        {
+                          "flag": "uri",
+                          "constraint": {
+                            "options": {
+                              "scheme": [
+                                "/^http$/",
+                                "/^https$/"
+                              ],
+                              "allowRelative": false,
+                              "relativeOnly": false,
+                              "allowCredentials": false
+                            }
+                          }
+                        }
+                      ],
+                      "level": "error"
+                    }
+                  ],
+                  "name": "href",
+                  "type": "url",
+                  "title": "URL"
+                }
+              ],
+              "name": "link",
+              "type": "object",
+              "title": "URL"
+            }
+          ],
+          "decorators": [
+            {
+              "value": "strong",
+              "title": "Strong"
+            },
+            {
+              "value": "em",
+              "title": "Emphasis"
+            }
+          ]
+        },
+        "lists": [
+          {
+            "value": "bullet",
+            "title": "Bullet"
+          }
+        ],
+        "styles": [
+          {
+            "value": "normal",
+            "title": "Normal"
+          },
+          {
+            "value": "h1",
+            "title": "H1"
+          },
+          {
+            "value": "h2",
+            "title": "H2"
+          },
+          {
+            "value": "h3",
+            "title": "H3"
+          },
+          {
+            "value": "h4",
+            "title": "H4"
+          },
+          {
+            "value": "blockquote",
+            "title": "Quote"
+          }
+        ],
+        "of": [],
+        "type": "block"
+      },
+      {
+        "options": {
+          "hotspot": true
+        },
+        "fields": [
+          {
+            "name": "alt",
+            "type": "string",
+            "title": "Alternative Text"
+          }
+        ],
+        "type": "image"
+      }
+    ],
+    "name": "blockContent",
+    "type": "array"
+  },
+  {
+    "fields": [
+      {
+        "name": "title",
+        "type": "string"
+      },
+      {
+        "options": {
+          "source": "title"
+        },
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "custom"
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "name": "slug",
+        "type": "slug"
+      },
+      {
+        "name": "description",
+        "type": "text"
+      }
+    ],
+    "name": "category",
+    "type": "document"
+  },
+  {
+    "fields": [
+      {
+        "name": "title",
+        "type": "string"
+      },
+      {
+        "options": {
+          "source": "title"
+        },
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "custom"
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "name": "slug",
+        "type": "slug"
+      },
+      {
+        "to": [
+          {
+            "type": "author"
+          }
+        ],
+        "name": "author",
+        "type": "reference"
+      },
+      {
+        "options": {
+          "hotspot": true
+        },
+        "fields": [
+          {
+            "name": "alt",
+            "type": "string",
+            "title": "Alternative text"
+          }
+        ],
+        "name": "mainImage",
+        "type": "image"
+      },
+      {
+        "of": [
+          {
+            "to": [
+              {
+                "type": "category"
+              }
+            ],
+            "type": "reference",
+            "title": "Reference to category"
+          }
+        ],
+        "name": "categories",
+        "type": "array"
+      },
+      {
+        "name": "publishedAt",
+        "type": "datetime"
+      },
+      {
+        "name": "body",
+        "type": "blockContent"
+      }
+    ],
+    "name": "post",
+    "type": "document"
+  },
+  {
+    "fields": [
+      {
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "options": {
+          "source": "name"
+        },
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "custom"
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "name": "slug",
+        "type": "slug"
+      },
+      {
+        "options": {
+          "hotspot": true
+        },
+        "name": "image",
+        "type": "image"
+      },
+      {
+        "of": [
+          {
+            "marks": {
+              "annotations": [
+                {
+                  "i18nTitleKey": "inputs.portable-text.annotation.link",
+                  "options": {
+                    "modal": {
+                      "type": "popover"
+                    }
+                  },
+                  "fields": [
+                    {
+                      "validation": [
+                        {
+                          "rules": [
+                            {
+                              "flag": "uri",
+                              "constraint": {
+                                "options": {
+                                  "scheme": [
+                                    "/^http$/",
+                                    "/^https$/",
+                                    "/^tel$/",
+                                    "/^mailto$/"
+                                  ],
+                                  "allowRelative": true,
+                                  "relativeOnly": false,
+                                  "allowCredentials": false
+                                }
+                              }
+                            }
+                          ],
+                          "level": "error"
+                        }
+                      ],
+                      "description": "A valid web, email, phone, or relative link.",
+                      "name": "href",
+                      "type": "url",
+                      "title": "Link"
+                    }
+                  ],
+                  "name": "link",
+                  "type": "object"
+                }
+              ],
+              "decorators": [
+                {
+                  "value": "strong",
+                  "title": "Strong"
+                },
+                {
+                  "value": "em",
+                  "title": "Italic"
+                },
+                {
+                  "value": "code",
+                  "title": "Code"
+                },
+                {
+                  "value": "underline",
+                  "title": "Underline"
+                },
+                {
+                  "value": "strike-through",
+                  "title": "Strike"
+                }
+              ]
+            },
+            "styles": [
+              {
+                "value": "normal",
+                "title": "Normal"
+              }
+            ],
+            "of": [],
+            "type": "block"
+          }
+        ],
+        "name": "bio",
+        "type": "array"
+      }
+    ],
+    "name": "author",
+    "type": "document"
+  },
+  {
+    "fields": [
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "name": "nombreApellido",
+        "type": "string",
+        "title": "Nombre y Apellido"
+      },
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "name": "aliadoId",
+        "type": "string",
+        "title": "ID del Aliado"
+      },
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "name": "cedula",
+        "type": "string",
+        "title": "Cédula"
+      },
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "name": "correo",
+        "type": "string",
+        "title": "Correo Electrónico"
+      },
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "name": "celular",
+        "type": "string"
+      },
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "name": "ciudad",
+        "type": "string"
+      },
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "name": "contrasena",
+        "type": "string",
+        "title": "Contraseña"
+      },
+      {
+        "name": "fechaRegistro",
+        "type": "datetime",
+        "title": "Fecha de Registro"
+      },
+      {
+        "options": {
+          "list": [
+            {
+              "title": "Pendiente",
+              "value": "pendiente"
+            },
+            {
+              "title": "En Revisión",
+              "value": "revision"
+            },
+            {
+              "title": "Validado",
+              "value": "aprobado"
+            },
+            {
+              "title": "Denegado",
+              "value": "denegado"
+            }
+          ]
+        },
+        "initialValue": "pendiente",
+        "name": "estadoDocumentacion",
+        "type": "string",
+        "title": "Estado de Documentación"
+      },
+      {
+        "name": "motivoDenegacion",
+        "type": "text",
+        "title": "Motivo de Denegación"
+      },
+      {
+        "initialValue": 0,
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "min",
+                "constraint": 0
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "description": "Comisión en euros generada por este cliente",
+        "name": "comision",
+        "type": "number",
+        "title": "Comisión Generada"
+      },
+      {
+        "options": {
+          "list": [
+            {
+              "title": "🔄 En Proceso",
+              "value": "proceso"
+            },
+            {
+              "title": "✅ Exitoso",
+              "value": "exitoso"
+            },
+            {
+              "title": "❌ Fallido",
+              "value": "fallido"
+            }
+          ],
+          "layout": "radio"
+        },
+        "initialValue": "proceso",
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "valid",
+                "constraint": [
+                  "proceso",
+                  "exitoso",
+                  "fallido"
+                ]
+              },
+              {
+                "flag": "presence",
+                "constraint": "required"
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "description": "Estado actual del proceso del cliente",
+        "name": "fase",
+        "type": "string",
+        "title": "Fase del Proceso"
+      },
+      {
+        "of": [
+          {
+            "type": "image"
+          },
+          {
+            "type": "file"
+          }
+        ],
+        "name": "cedulaArchivo",
+        "type": "array",
+        "title": "Archivos de Cédula"
+      },
+      {
+        "of": [
+          {
+            "type": "image"
+          },
+          {
+            "type": "file"
+          }
+        ],
+        "name": "comprobantesDeuda",
+        "type": "array",
+        "title": "Comprobantes de Deuda"
+      },
+      {
+        "name": "audioValidacion",
+        "type": "file",
+        "title": "Audio de Validación"
+      }
+    ],
+    "name": "registro",
+    "type": "document",
+    "title": "Registro de Usuario"
+  },
+  {
+    "fields": [
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              },
+              {
+                "flag": "regex",
+                "constraint": {
+                  "pattern": "/^AR-\\d{4}$/",
+                  "invert": false
+                }
+              }
+            ],
+            "level": "error",
+            "message": "Debe tener formato AR-0000"
+          }
+        ],
+        "description": "ID único generado automáticamente (AR-XXXX)",
+        "readOnly": true,
+        "name": "aliadoId",
+        "type": "string",
+        "title": "ID de Aliado"
+      },
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              },
+              {
+                "flag": "min",
+                "constraint": 2
+              },
+              {
+                "flag": "max",
+                "constraint": 100
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "description": "Nombre completo del aliado",
+        "name": "nombreApellido",
+        "type": "string",
+        "title": "Nombre y Apellido"
+      },
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              },
+              {
+                "flag": "regex",
+                "constraint": {
+                  "pattern": "/^\\d{7,10}$/",
+                  "invert": false
+                }
+              }
+            ],
+            "level": "error",
+            "message": "Debe tener entre 7 y 10 dígitos"
+          }
+        ],
+        "description": "Número de identificación",
+        "name": "cedula",
+        "type": "string",
+        "title": "Cédula"
+      },
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "description": "Email de contacto (se normaliza a minúsculas)",
+        "name": "correo",
+        "type": "string",
+        "title": "Correo Electrónico"
+      },
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              },
+              {
+                "flag": "regex",
+                "constraint": {
+                  "pattern": "/^\\d{10}$/",
+                  "invert": false
+                }
+              }
+            ],
+            "level": "error",
+            "message": "Debe tener exactamente 10 dígitos"
+          }
+        ],
+        "description": "Número de teléfono celular",
+        "name": "celular",
+        "type": "string"
+      },
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              },
+              {
+                "flag": "min",
+                "constraint": 2
+              },
+              {
+                "flag": "max",
+                "constraint": 50
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "description": "Ciudad de residencia",
+        "name": "ciudad",
+        "type": "string"
+      },
+      {
+        "options": {
+          "list": [
+            {
+              "title": "Financiero",
+              "value": "Financiero"
+            },
+            {
+              "title": "Seguros",
+              "value": "Seguros"
+            },
+            {
+              "title": "Inmobiliaria",
+              "value": "Inmobiliaria"
+            },
+            {
+              "title": "Consultoría",
+              "value": "Consultoría"
+            },
+            {
+              "title": "Tecnología",
+              "value": "Tecnología"
+            },
+            {
+              "title": "Salud",
+              "value": "Salud"
+            },
+            {
+              "title": "Educación",
+              "value": "Educación"
+            },
+            {
+              "title": "Otros",
+              "value": "Otros"
+            }
+          ],
+          "layout": "dropdown"
+        },
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "valid",
+                "constraint": [
+                  "Financiero",
+                  "Seguros",
+                  "Inmobiliaria",
+                  "Consultoría",
+                  "Tecnología",
+                  "Salud",
+                  "Educación",
+                  "Otros"
+                ]
+              },
+              {
+                "flag": "presence",
+                "constraint": "required"
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "description": "Sector principal donde trabaja el aliado",
+        "name": "sectorTrabajo",
+        "type": "string",
+        "title": "Sector de Trabajo"
+      },
+      {
+        "options": {
+          "list": [
+            {
+              "title": "Asesor",
+              "value": "Asesor"
+            },
+            {
+              "title": "Gerente",
+              "value": "Gerente"
+            },
+            {
+              "title": "Director",
+              "value": "Director"
+            },
+            {
+              "title": "Coordinador",
+              "value": "Coordinador"
+            },
+            {
+              "title": "Auxiliar",
+              "value": "Auxiliar"
+            },
+            {
+              "title": "Consultor",
+              "value": "Consultor"
+            },
+            {
+              "title": "Analista",
+              "value": "Analista"
+            },
+            {
+              "title": "Otro",
+              "value": "Otro"
+            }
+          ],
+          "layout": "dropdown"
+        },
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "valid",
+                "constraint": [
+                  "Asesor",
+                  "Gerente",
+                  "Director",
+                  "Coordinador",
+                  "Auxiliar",
+                  "Consultor",
+                  "Analista",
+                  "Otro"
+                ]
+              },
+              {
+                "flag": "presence",
+                "constraint": "required"
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "description": "Cargo actual en su trabajo",
+        "name": "cargo",
+        "type": "string"
+      },
+      {
+        "options": {
+          "list": [
+            {
+              "title": "0-1 años",
+              "value": "0-1"
+            },
+            {
+              "title": "2-5 años",
+              "value": "2-5"
+            },
+            {
+              "title": "6-10 años",
+              "value": "6-10"
+            },
+            {
+              "title": "11-15 años",
+              "value": "11-15"
+            },
+            {
+              "title": "16-20 años",
+              "value": "16-20"
+            },
+            {
+              "title": "Más de 20 años",
+              "value": "20+"
+            }
+          ],
+          "layout": "radio"
+        },
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "valid",
+                "constraint": [
+                  "0-1",
+                  "2-5",
+                  "6-10",
+                  "11-15",
+                  "16-20",
+                  "20+"
+                ]
+              },
+              {
+                "flag": "presence",
+                "constraint": "required"
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "description": "Experiencia laboral en el sector",
+        "name": "experiencia",
+        "type": "string",
+        "title": "Años de Experiencia"
+      },
+      {
+        "options": {
+          "list": [
+            {
+              "title": "1-5 clientes",
+              "value": "1-5"
+            },
+            {
+              "title": "6-10 clientes",
+              "value": "6-10"
+            },
+            {
+              "title": "11-20 clientes",
+              "value": "11-20"
+            },
+            {
+              "title": "21-50 clientes",
+              "value": "21-50"
+            },
+            {
+              "title": "Más de 50 clientes",
+              "value": "50+"
+            }
+          ],
+          "layout": "radio"
+        },
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "valid",
+                "constraint": [
+                  "1-5",
+                  "6-10",
+                  "11-20",
+                  "21-50",
+                  "50+"
+                ]
+              },
+              {
+                "flag": "presence",
+                "constraint": "required"
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "description": "Estimación de clientes potenciales por mes",
+        "name": "potencialClientes",
+        "type": "string",
+        "title": "Potencial de Clientes Mensuales"
+      },
+      {
+        "options": {
+          "list": [
+            {
+              "title": "18-25 años",
+              "value": "18-25"
+            },
+            {
+              "title": "26-35 años",
+              "value": "26-35"
+            },
+            {
+              "title": "36-45 años",
+              "value": "36-45"
+            },
+            {
+              "title": "46-55 años",
+              "value": "46-55"
+            },
+            {
+              "title": "56-65 años",
+              "value": "56-65"
+            },
+            {
+              "title": "Más de 65 años",
+              "value": "65+"
+            }
+          ],
+          "layout": "radio"
+        },
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "valid",
+                "constraint": [
+                  "18-25",
+                  "26-35",
+                  "36-45",
+                  "46-55",
+                  "56-65",
+                  "65+"
+                ]
+              },
+              {
+                "flag": "presence",
+                "constraint": "required"
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "description": "Rango de edad del aliado",
+        "name": "edad",
+        "type": "string"
+      },
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "description": "Contraseña hasheada con bcrypt",
+        "readOnly": true,
+        "name": "contrasena",
+        "type": "string",
+        "title": "Contraseña (Hash)"
+      },
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "description": "Fecha y hora de registro automática",
+        "readOnly": true,
+        "name": "fechaRegistro",
+        "type": "datetime",
+        "title": "Fecha de Registro"
+      },
+      {
+        "options": {
+          "list": [
+            {
+              "title": "🟡 Pendiente",
+              "value": "pendiente"
+            },
+            {
+              "title": "🔵 En Revisión",
+              "value": "revision"
+            },
+            {
+              "title": "🟢 Aprobado",
+              "value": "aprobado"
+            },
+            {
+              "title": "🔴 Denegado",
+              "value": "denegado"
+            }
+          ],
+          "layout": "radio"
+        },
+        "initialValue": "pendiente",
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "valid",
+                "constraint": [
+                  "pendiente",
+                  "revision",
+                  "aprobado",
+                  "denegado"
+                ]
+              },
+              {
+                "flag": "presence",
+                "constraint": "required"
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "description": "Estado actual de la documentación del aliado",
+        "name": "estadoDocumentacion",
+        "type": "string",
+        "title": "Estado de Documentación"
+      },
+      {
+        "rows": 3,
+        "description": "Razón específica si la documentación fue denegada",
+        "hidden": "conditional",
+        "name": "motivoDenegacion",
+        "type": "text",
+        "title": "Motivo de Denegación"
+      },
+      {
+        "description": "Carga ambas caras de la cédula (formato: PDF, JPG, PNG)",
+        "of": [
+          {
+            "options": {
+              "hotspot": true
+            },
+            "type": "image"
+          },
+          {
+            "options": {
+              "accept": ".pdf,.jpg,.jpeg,.png"
+            },
+            "type": "file"
+          }
+        ],
+        "name": "cedulaArchivo",
+        "type": "array",
+        "title": "Archivos de Cédula"
+      },
+      {
+        "description": "Certificados de deuda y comprobantes financieros",
+        "of": [
+          {
+            "options": {
+              "hotspot": true
+            },
+            "type": "image"
+          },
+          {
+            "options": {
+              "accept": ".pdf,.jpg,.jpeg,.png"
+            },
+            "type": "file"
+          }
+        ],
+        "name": "comprobantesDeuda",
+        "type": "array",
+        "title": "Comprobantes de Deuda"
+      },
+      {
+        "options": {
+          "accept": ".mp3,.wav,.m4a,.ogg"
+        },
+        "description": "Audio de validación del aliado",
+        "name": "audioValidacion",
+        "type": "file",
+        "title": "Audio de Validación"
+      },
+      {
+        "rows": 4,
+        "description": "Notas internas sobre el aliado",
+        "name": "notas",
+        "type": "text",
+        "title": "Notas Administrativas"
+      },
+      {
+        "description": "Fecha de aprobación de la documentación",
+        "readOnly": true,
+        "hidden": "conditional",
+        "name": "fechaAprobacion",
+        "type": "datetime",
+        "title": "Fecha de Aprobación"
+      },
+      {
+        "description": "Última vez que se modificó el registro",
+        "readOnly": true,
+        "name": "ultimaActualizacion",
+        "type": "datetime",
+        "title": "Última Actualización"
+      },
+      {
+        "initialValue": true,
+        "description": "Si el usuario puede acceder al sistema",
+        "name": "activo",
+        "type": "boolean",
+        "title": "Usuario Activo"
+      },
+      {
+        "initialValue": 0,
+        "description": "Contador de intentos de login fallidos",
+        "readOnly": true,
+        "name": "intentosFallidos",
+        "type": "number",
+        "title": "Intentos de Login Fallidos"
+      },
+      {
+        "description": "Última vez que el usuario inició sesión",
+        "readOnly": true,
+        "name": "ultimoAcceso",
+        "type": "datetime",
+        "title": "Último Acceso"
+      }
+    ],
+    "name": "registroaliado",
+    "type": "document",
+    "title": "Registro Aliado"
+  }
+]

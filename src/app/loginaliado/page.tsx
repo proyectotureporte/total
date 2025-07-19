@@ -111,7 +111,7 @@ export default function LogialiadonPage() {
             <div className="text-center">
               <span className="text-gray-400 text-sm">¿No tienes cuenta? </span>
               <a
-                href="/registro"
+                href="/registroaliado"
                 className="text-sm text-blue-400 hover:text-blue-300 hover:underline font-semibold transition-colors"
               >
                 Regístrate

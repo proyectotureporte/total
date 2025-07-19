@@ -12,6 +12,12 @@ export default defineType({
       validation: Rule => Rule.required()
     }),
     defineField({
+      name: 'aliadoId',
+      title: 'ID del Aliado',
+      type: 'string',
+      validation: Rule => Rule.required()
+    }),
+    defineField({
       name: 'cedula',
       title: 'Cédula',
       type: 'string',
@@ -54,7 +60,7 @@ export default defineType({
         list: [
           { title: 'Pendiente', value: 'pendiente' },
           { title: 'En Revisión', value: 'revision' },
-          { title: 'Validado', value: 'validado' },
+          { title: 'Validado', value: 'aprobado' },
           { title: 'Denegado', value: 'denegado' }
         ]
       },
@@ -65,6 +71,30 @@ export default defineType({
       title: 'Motivo de Denegación',
       type: 'text'
     }),
+    defineField({
+  name: 'comision',
+  title: 'Comisión Generada',
+  type: 'number',
+  initialValue: 0,
+  validation: Rule => Rule.min(0),
+  description: 'Comisión en euros generada por este cliente'
+}),
+defineField({
+  name: 'fase',
+  title: 'Fase del Proceso',
+  type: 'string',
+  options: {
+    list: [
+      { title: '🔄 En Proceso', value: 'proceso' },
+      { title: '✅ Exitoso', value: 'exitoso' },
+      { title: '❌ Fallido', value: 'fallido' }
+    ],
+    layout: 'radio'
+  },
+  initialValue: 'proceso',
+  validation: Rule => Rule.required(),
+  description: 'Estado actual del proceso del cliente'
+}),
     defineField({
       name: 'cedulaArchivo',
       title: 'Archivos de Cédula',

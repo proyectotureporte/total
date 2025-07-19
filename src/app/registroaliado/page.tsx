@@ -11,9 +11,9 @@ interface FormData {
   ciudad: string
   sectorTrabajo: string
   cargo: string
-  experiencia: number
+  experiencia: string
   potencialClientes: string
-  edad: number
+  edad: string
   contrasena: string
 }
 
@@ -35,9 +35,9 @@ export default function RegistroPage() {
     ciudad: '',
     sectorTrabajo: '',
     cargo: '',
-    experiencia: 0,
+    experiencia: '',
     potencialClientes: '',
-    edad: 0,
+    edad: '',
     contrasena: '',
   })
   const [loading, setLoading] = useState<boolean>(false)
@@ -48,10 +48,7 @@ export default function RegistroPage() {
     const { name, value } = e.target
     setForm(prev => ({
       ...prev,
-      [name]:
-        name === 'experiencia' || name === 'edad'
-          ? Number(value)
-          : value
+      [name]: value
     }))
     if (error) setError('')
   }
@@ -97,15 +94,15 @@ export default function RegistroPage() {
       setError('El cargo es obligatorio')
       return false
     }
-    if (form.experiencia === 0) {
+    if (!form.experiencia) {
       setError('La experiencia es obligatoria')
       return false
     }
-    if (!form.potencialClientes.trim()) {
+    if (!form.potencialClientes) {
       setError('El potencial de clientes mensuales es obligatorio')
       return false
     }
-    if (form.edad === 0) {
+    if (!form.edad) {
       setError('La edad es obligatoria')
       return false
     }
@@ -127,19 +124,26 @@ export default function RegistroPage() {
     setLoading(true)
     
     try {
+      // Asegurar que todos los campos estén presentes y no vacíos
       const userData = {
         nombreApellido: form.nombreApellido.trim(),
         cedula: form.cedula.trim(),
         correo: form.correo.trim().toLowerCase(),
         celular: form.celular.trim(),
-        ciudad: form.ciudad,
-        sectorTrabajo: form.sectorTrabajo,
-        cargo: form.cargo,
-        experiencia: form.experiencia,
+        ciudad: form.ciudad.trim(),
+        sectorTrabajo: form.sectorTrabajo.trim(), // Asegurar que no esté vacío
+        cargo: form.cargo.trim(), // Asegurar que no esté vacío
+        experiencia: form.experiencia.trim(),
         potencialClientes: form.potencialClientes.trim(),
-        edad: form.edad,
-        contrasena: form.contrasena
+        edad: form.edad.trim(),
+        contrasena: form.contrasena.trim()
       }
+
+      // Debug: verificar que los datos estén completos
+      console.log('Datos a enviar:', {
+        ...userData,
+        contrasena: '[OCULTA]'
+      })
       
       const response = await fetch('/api/registroaliado', {
         method: 'POST',
@@ -156,6 +160,7 @@ export default function RegistroPage() {
       // Mostrar el ID generado al usuario
       setGeneratedId(data.aliadoId)
       
+      // Limpiar formulario
       setForm({
         nombreApellido: '',
         cedula: '',
@@ -164,26 +169,23 @@ export default function RegistroPage() {
         ciudad: '',
         sectorTrabajo: '',
         cargo: '',
-        experiencia: 0,
+        experiencia: '',
         potencialClientes: '',
-        edad: 0,
+        edad: '',
         contrasena: '',
       })
       
       // Mostrar mensaje de éxito con el ID generado
       alert(`¡Usuario registrado exitosamente!\nTu ID de aliado es: ${data.aliadoId}\nGuarda este ID para futuras referencias.`)
       
-      router.push('/Panel')
+      // CORRECCIÓN: Redirigir a loginaliado en lugar de Panel
+      router.push('/loginaliado')
+      
     } catch (error) {
       setLoading(false)
       const errorMessage = (error as Error).message || String(error)
       setError('Error al registrar: ' + errorMessage)
     }
-  }
-
-  const edadOptions = []
-  for (let i = 18; i <= 90; i++) {
-    edadOptions.push(i)
   }
 
   return (
@@ -314,6 +316,10 @@ export default function RegistroPage() {
                   <option value="Financiero">Financiero</option>
                   <option value="Seguros">Seguros</option>
                   <option value="Inmobiliaria">Inmobiliaria</option>
+                  <option value="Consultoría">Consultoría</option>
+                  <option value="Tecnología">Tecnología</option>
+                  <option value="Salud">Salud</option>
+                  <option value="Educación">Educación</option>
                   <option value="Otros">Otros</option>
                 </select>
               </div>
@@ -336,6 +342,8 @@ export default function RegistroPage() {
                   <option value="Director">Director</option>
                   <option value="Coordinador">Coordinador</option>
                   <option value="Auxiliar">Auxiliar</option>
+                  <option value="Consultor">Consultor</option>
+                  <option value="Analista">Analista</option>
                   <option value="Otro">Otro</option>
                 </select>
               </div>
@@ -344,34 +352,43 @@ export default function RegistroPage() {
                 <label htmlFor="experiencia" className="block text-sm font-medium mb-1 text-gray-200">
                   Años de Experiencia
                 </label>
-                <input
+                <select
                   id="experiencia"
-                  type="number"
                   name="experiencia"
-                  placeholder="0"
-                  value={form.experiencia === 0 ? '' : form.experiencia}
+                  value={form.experiencia}
                   onChange={handleChange}
                   required
-                  min={0}
-                  max={70}
-                  className="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 placeholder-gray-400 text-white transition-all"
-                />
+                  className="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-white transition-all"
+                >
+                  <option value="">Selecciona tu experiencia</option>
+                  <option value="0-1">0-1 años</option>
+                  <option value="2-5">2-5 años</option>
+                  <option value="6-10">6-10 años</option>
+                  <option value="11-15">11-15 años</option>
+                  <option value="16-20">16-20 años</option>
+                  <option value="20+">Más de 20 años</option>
+                </select>
               </div>
 
               <div>
                 <label htmlFor="potencialClientes" className="block text-sm font-medium mb-1 text-gray-200">
                   Potencial de Clientes Mensuales
                 </label>
-                <input
+                <select
                   id="potencialClientes"
-                  type="text"
                   name="potencialClientes"
-                  placeholder="Ej: 10-20 clientes"
                   value={form.potencialClientes}
                   onChange={handleChange}
                   required
-                  className="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 placeholder-gray-400 text-white transition-all"
-                />
+                  className="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-white transition-all"
+                >
+                  <option value="">Selecciona el potencial</option>
+                  <option value="1-5">1-5 clientes</option>
+                  <option value="6-10">6-10 clientes</option>
+                  <option value="11-20">11-20 clientes</option>
+                  <option value="21-50">21-50 clientes</option>
+                  <option value="50+">Más de 50 clientes</option>
+                </select>
               </div>
 
               <div>
@@ -386,12 +403,13 @@ export default function RegistroPage() {
                   required
                   className="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-white transition-all"
                 >
-                  <option value={0}>Selecciona tu edad</option>
-                  {edadOptions.map((edad) => (
-                    <option key={edad} value={edad}>
-                      {edad} años
-                    </option>
-                  ))}
+                  <option value="">Selecciona tu edad</option>
+                  <option value="18-25">18-25 años</option>
+                  <option value="26-35">26-35 años</option>
+                  <option value="36-45">36-45 años</option>
+                  <option value="46-55">46-55 años</option>
+                  <option value="56-65">56-65 años</option>
+                  <option value="65+">Más de 65 años</option>
                 </select>
               </div>
 
