@@ -89,7 +89,7 @@ const clientesMock = [
     celular: '3009876543',
     ciudad: 'Medellín',
     fechaRegistro: '2025-07-10T14:20:00.000Z',
-    estadoDocumentacion: 'pendiente',
+    estadoDocumentacion: 'revision',
     motivoDenegacion: '',
     aliadoId: 'AR-0150',
     comision: 0,
@@ -112,9 +112,13 @@ const clientesMock = [
   }
 ];
 
+type Cliente = typeof clientesMock[0];
+
 export default function App() {
   const [clientes, setClientes] = useState(clientesMock);
   const [showModal, setShowModal] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<Cliente | null>(null);
   const [form, setForm] = useState({
     nombreApellido: '',
     cedula: '',
@@ -123,9 +127,21 @@ export default function App() {
     ciudad: '',
     contrasena: ''
   });
+
+  // Estados para el modal de documentos
+  const [tipoCedula, setTipoCedula] = useState<'foto' | 'documento'>('foto');
+  const [cedulaFiles, setCedulaFiles] = useState<File[]>([]);
+  const [comprobantesFiles, setComprobantesFiles] = useState<File[]>([]);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+
   const [loading, setLoading] = useState(false);
+  const [uploadLoading, setUploadLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [uploadError, setUploadError] = useState('');
+  const [uploadSuccess, setUploadSuccess] = useState('');
 
   useEffect(() => {
     const fetchClientes = async () => {
@@ -153,33 +169,33 @@ export default function App() {
 
   // Cálculos de contadores con validaciones mejoradas
   const cantidadClientes = Array.isArray(clientes) ? clientes.length : 0;
-  
+
   const clientesActivos = Array.isArray(clientes) ? clientes.filter(c => {
     const documentacion = obtenerValorSeguro(c, 'estadoDocumentacion').toLowerCase();
     return documentacion === 'aprobado';
   }).length : 0;
-  
+
   const clientesPendientes = Array.isArray(clientes) ? clientes.filter(c => {
     const documentacion = obtenerValorSeguro(c, 'estadoDocumentacion').toLowerCase();
-    return documentacion === 'pendiente';
+    return documentacion === 'pendiente' || documentacion === 'revision';
   }).length : 0;
-  
+
   const clientesExitosos = Array.isArray(clientes) ? clientes.filter(c => {
     const fase = obtenerValorSeguro(c, 'fase').toLowerCase();
     return fase === 'exitoso';
   }).length : 0;
-  
+
   const clientesFallidos = Array.isArray(clientes) ? clientes.filter(c => {
     const fase = obtenerValorSeguro(c, 'fase').toLowerCase();
     const documentacion = obtenerValorSeguro(c, 'estadoDocumentacion').toLowerCase();
     return fase === 'fallido' || documentacion === 'denegado';
   }).length : 0;
-  
+
   const comisionesMes = Array.isArray(clientes) ? clientes.filter(c => {
     const fecha = obtenerValorSeguro(c, 'fechaRegistro');
     return fecha && fecha.toString().startsWith('2025-07');
   }).reduce((sum, c) => sum + (Number(c.comision) || 0), 0) : 0;
-  
+
   const comisionesTotales = Array.isArray(clientes) ? clientes.reduce((sum, c) => sum + (Number(c.comision) || 0), 0) : 0;
 
   // Para el scroll: primeros 3 fijos, el resto en scroll
@@ -191,6 +207,35 @@ export default function App() {
     setForm({ ...form, [e.target.name]: e.target.value });
     if (error) setError('');
     if (success) setSuccess('');
+  };
+
+  // Funciones para manejo de documentos en el modal
+  const handleCedulaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return;
+    const files = Array.from(e.target.files);
+    if (tipoCedula === 'foto' && files.length !== 2) {
+      setUploadError('Debes subir 2 fotos (frente y reverso)');
+      return;
+    }
+    if (tipoCedula === 'documento' && files.length !== 1) {
+      setUploadError('Debes subir 1 documento PDF');
+      return;
+    }
+    setCedulaFiles(files);
+    setUploadError('');
+  };
+
+  const handleComprobantesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return;
+    setComprobantesFiles(Array.from(e.target.files));
+  };
+
+  const removeFile = (index: number, type: 'cedula' | 'comprobantes') => {
+    if (type === 'cedula') {
+      setCedulaFiles(prev => prev.filter((_, i) => i !== index));
+    } else {
+      setComprobantesFiles(prev => prev.filter((_, i) => i !== index));
+    }
   };
 
   // CORREGIDO: handleSubmit debe recibir el evento del formulario
@@ -217,17 +262,17 @@ export default function App() {
           aliadoId: user.aliadoId
         })
       });
-      
+    
       const data = await response.json();
-      
+    
       if (!response.ok) {
         setError(data.error || 'Error al registrar cliente');
         setLoading(false);
         return;
       }
-      
+    
       setSuccess('¡Cliente registrado exitosamente!');
-      
+    
       // Resetear formulario
       setForm({
         nombreApellido: '',
@@ -237,16 +282,16 @@ export default function App() {
         ciudad: '',
         contrasena: ''
       });
-      
+    
       setLoading(false);
-      
+    
       // Refresca la lista de clientes
       const res = await fetch(`/api/user?aliadoId=${user.aliadoId}`);
       if (res.ok) {
         const nuevosClientes = await res.json();
         setClientes(Array.isArray(nuevosClientes) ? nuevosClientes : []);
       }
-      
+    
       // Cerrar modal después de 1.5 segundos
       setTimeout(() => {
         setShowModal(false);
@@ -258,6 +303,124 @@ export default function App() {
       setError('Error al registrar cliente');
       setLoading(false);
     }
+  };
+
+  // Manejo de subida de documentos
+  const handleUploadSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setUploadError('');
+    setUploadSuccess('');
+    setUploadLoading(true);
+
+    if (!cedulaFiles.length) {
+      setUploadError('Debes subir la cédula');
+      setUploadLoading(false);
+      return;
+    }
+
+    if (!selectedClient) {
+      setUploadError('No se ha seleccionado un cliente');
+      setUploadLoading(false);
+      return;
+    }
+
+    try {
+      setUploadProgress(0);
+
+      // Construir FormData para enviar archivos y userId
+      const formData = new FormData();
+      const clientId = obtenerValorSeguro(selectedClient, '_id');
+      formData.append('userId', clientId);
+      
+      cedulaFiles.forEach(f => formData.append('cedulaFiles', f));
+      comprobantesFiles.forEach(f => formData.append('comprobantesFiles', f));
+      
+      if (audioBlob) {
+        // Crear archivo con extensión correcta según el tipo MIME
+        const getExtension = (mimeType: string) => {
+          if (mimeType.includes('webm')) return 'webm';
+          if (mimeType.includes('ogg')) return 'ogg';
+          if (mimeType.includes('mp4')) return 'm4a';
+          return 'webm';
+        };
+        
+        const extension = getExtension(audioBlob.type);
+        const audioFile = new File([audioBlob], `audio.${extension}`, { type: audioBlob.type });
+        formData.append('audioBlob', audioFile);
+      }
+
+      // Simular progreso
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => Math.min(prev + 10, 90));
+      }, 100);
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+      });
+
+      clearInterval(progressInterval);
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setUploadError(data.error || 'Error al subir documento');
+        setUploadLoading(false);
+        return;
+      }
+
+      setUploadProgress(100);
+      setUploadSuccess('¡Documentos subidos exitosamente!');
+      
+      setUploadLoading(false);
+
+      // Recargar datos del cliente para ver el estado actualizado
+      try {
+        const res = await fetch(`/api/user?aliadoId=${user.aliadoId}`);
+        if (res.ok) {
+          const nuevosClientes = await res.json();
+          setClientes(Array.isArray(nuevosClientes) ? nuevosClientes : []);
+        }
+      } catch (refreshErr) {
+        console.error('Error al recargar clientes:', refreshErr);
+      }
+
+      // Simular login automático del usuario
+      console.log(`Usuario ${obtenerValorSeguro(selectedClient, 'nombreApellido')} logueado automáticamente`);
+
+      // Cerrar modal después de 2 segundos
+      setTimeout(() => {
+        setShowUploadModal(false);
+        setUploadSuccess('');
+        setSelectedClient(null);
+        // Resetear estados del modal
+        resetUploadModal();
+      }, 2000);
+
+    } catch (err) {
+      console.error('Error al subir documento:', err);
+      setUploadError('Error al subir documento');
+      setUploadLoading(false);
+    }
+  };
+
+  // Función para resetear el modal de upload
+  const resetUploadModal = () => {
+    setTipoCedula('foto');
+    setCedulaFiles([]);
+    setComprobantesFiles([]);
+    setAudioBlob(null);
+    setAudioUrl(null);
+    setUploadProgress(0);
+    setUploadError('');
+    setUploadSuccess('');
+  };
+
+  // Función para abrir modal de subir documentos
+  const handleSubirDocumentos = (cliente: Cliente) => {
+    setSelectedClient(cliente);
+    resetUploadModal();
+    setShowUploadModal(true);
   };
 
   return (
@@ -310,7 +473,7 @@ export default function App() {
       Crear cliente
     </button>
   </div>
-  
+
   {cantidadClientes === 0 ? (
     <div className="text-center py-8 text-gray-400">
       No hay clientes registrados aún
@@ -320,7 +483,7 @@ export default function App() {
       {/* WRAPPER SCROLL HORIZONTAL SOLO EN MOVIL */}
       <div className="overflow-x-auto md:overflow-x-visible">
         {/* Encabezados */}
-        <div className="min-w-[700px] grid grid-cols-7 gap-2 font-semibold text-gray-300 border-b border-gray-700 pb-2 mb-2 text-sm">
+        <div className="min-w-[800px] grid grid-cols-8 gap-2 font-semibold text-gray-300 border-b border-gray-700 pb-2 mb-2 text-sm">
           <div>Cliente</div>
           <div>Ciudad</div>
           <div>Teléfono</div>
@@ -328,71 +491,96 @@ export default function App() {
           <div>Documentos</div>
           <div>Fase proceso</div>
           <div>Comisión generada</div>
+          <div>Acciones</div>
         </div>
         {/* Primeros 3 clientes */}
         {primerosClientes.map((c, idx) => (
-          <div key={c._id || `cliente-${idx}`} className="min-w-[700px] grid grid-cols-7 gap-2 py-2 border-b border-gray-800 text-sm">
-                <div className="font-medium">{c.nombreApellido || 'Sin nombre'}</div>
-                <div>{c.ciudad || '-'}</div>
-                <div>{c.celular || '-'}</div>
-                <div>{formatearFecha(c.fechaRegistro)}</div>
+          <div key={c._id || `cliente-${idx}`} className="min-w-[800px] grid grid-cols-8 gap-2 py-2 border-b border-gray-800 text-sm">
+                <div className="font-medium">{obtenerValorSeguro(c, 'nombreApellido') || 'Sin nombre'}</div>
+                <div>{obtenerValorSeguro(c, 'ciudad') || '-'}</div>
+                <div>{obtenerValorSeguro(c, 'celular') || '-'}</div>
+                <div>{formatearFecha(obtenerValorSeguro(c, 'fechaRegistro'))}</div>
                 <div>
                   <span className={`px-2 py-1 rounded text-xs font-medium ${
-                    c.estadoDocumentacion === 'aprobado' 
+                    obtenerValorSeguro(c, 'estadoDocumentacion') === 'aprobado' 
                       ? 'bg-green-600 text-white' 
-                      : c.estadoDocumentacion === 'pendiente'
+                      : obtenerValorSeguro(c, 'estadoDocumentacion') === 'pendiente'
                       ? 'bg-yellow-600 text-white'
+                      : obtenerValorSeguro(c, 'estadoDocumentacion') === 'revision'
+                      ? 'bg-blue-600 text-white'
                       : 'bg-red-600 text-white'
                   }`}>
-                    {c.estadoDocumentacion ? c.estadoDocumentacion.charAt(0).toUpperCase() + c.estadoDocumentacion.slice(1) : 'Sin estado'}
+                    {obtenerValorSeguro(c, 'estadoDocumentacion') ? obtenerValorSeguro(c, 'estadoDocumentacion').charAt(0).toUpperCase() + obtenerValorSeguro(c, 'estadoDocumentacion').slice(1) : 'Sin estado'}
                   </span>
                 </div>
                 <div>
                   <span className={`px-2 py-1 rounded text-xs ${
-                    c.fase === 'exitoso' 
+                    obtenerValorSeguro(c, 'fase') === 'exitoso' 
                       ? 'bg-blue-600 text-white' 
-                      : c.fase === 'fallido'
+                      : obtenerValorSeguro(c, 'fase') === 'fallido'
                       ? 'bg-red-500 text-white'
                       : 'bg-gray-600 text-white'
                   }`}>
-                    {c.fase || 'proceso'}
+                    {obtenerValorSeguro(c, 'fase') || 'proceso'}
                   </span>
                 </div>
                 <div className="font-semibold text-green-400">{Number(c.comision) || 0}€</div>
+                <div>
+                  {(obtenerValorSeguro(c, 'estadoDocumentacion') === 'pendiente' || obtenerValorSeguro(c, 'estadoDocumentacion') === 'denegado') && (
+                    <button
+                      onClick={() => handleSubirDocumentos(c)}
+                      className="bg-purple-600 hover:bg-purple-700 text-white px-2 py-1 rounded text-xs font-medium transition"
+                    >
+                      Subir docs
+                    </button>
+                  )}
+                </div>
               </div>
         ))}
         {/* Resto de clientes en scroll vertical */}
         {restoClientes.length > 0 && (
           <div className="max-h-32 overflow-y-auto mt-2">
             {restoClientes.map((c, idx) => (
-              <div key={c._id || `resto-${idx}`} className="min-w-[700px] grid grid-cols-7 gap-2 py-2 border-b border-gray-800 text-sm">
-                    <div className="font-medium">{c.nombreApellido || 'Sin nombre'}</div>
-                    <div>{c.ciudad || '-'}</div>
-                    <div>{c.celular || '-'}</div>
-                    <div>{formatearFecha(c.fechaRegistro)}</div>
+              <div key={c._id || `resto-${idx}`} className="min-w-[800px] grid grid-cols-8 gap-2 py-2 border-b border-gray-800 text-sm">
+                    <div className="font-medium">{obtenerValorSeguro(c, 'nombreApellido') || 'Sin nombre'}</div>
+                    <div>{obtenerValorSeguro(c, 'ciudad') || '-'}</div>
+                    <div>{obtenerValorSeguro(c, 'celular') || '-'}</div>
+                    <div>{formatearFecha(obtenerValorSeguro(c, 'fechaRegistro'))}</div>
                     <div>
                       <span className={`px-2 py-1 rounded text-xs font-medium ${
-                        c.estadoDocumentacion === 'aprobado' 
+                        obtenerValorSeguro(c, 'estadoDocumentacion') === 'aprobado' 
                           ? 'bg-green-600 text-white' 
-                          : c.estadoDocumentacion === 'pendiente'
+                          : obtenerValorSeguro(c, 'estadoDocumentacion') === 'pendiente'
                           ? 'bg-yellow-600 text-white'
+                          : obtenerValorSeguro(c, 'estadoDocumentacion') === 'revision'
+                          ? 'bg-blue-600 text-white'
                           : 'bg-red-600 text-white'
                       }`}>
-                        {c.estadoDocumentacion ? c.estadoDocumentacion.charAt(0).toUpperCase() + c.estadoDocumentacion.slice(1) : 'Sin estado'}
+                        {obtenerValorSeguro(c, 'estadoDocumentacion') ? obtenerValorSeguro(c, 'estadoDocumentacion').charAt(0).toUpperCase() + obtenerValorSeguro(c, 'estadoDocumentacion').slice(1) : 'Sin estado'}
                       </span>
                     </div>
                     <div>
                       <span className={`px-2 py-1 rounded text-xs ${
-                        c.fase === 'exitoso' 
+                        obtenerValorSeguro(c, 'fase') === 'exitoso' 
                           ? 'bg-blue-600 text-white' 
-                          : c.fase === 'fallido'
+                          : obtenerValorSeguro(c, 'fase') === 'fallido'
                           ? 'bg-red-500 text-white'
                           : 'bg-gray-600 text-white'
                       }`}>
-                        {c.fase || 'proceso'}
+                        {obtenerValorSeguro(c, 'fase') || 'proceso'}
                       </span>
                     </div>
                     <div className="font-semibold text-green-400">{Number(c.comision) || 0}€</div>
+                    <div>
+                      {(obtenerValorSeguro(c, 'estadoDocumentacion') === 'pendiente' || obtenerValorSeguro(c, 'estadoDocumentacion') === 'denegado') && (
+                        <button
+                          onClick={() => handleSubirDocumentos(c)}
+                          className="bg-purple-600 hover:bg-purple-700 text-white px-2 py-1 rounded text-xs font-medium transition"
+                        >
+                          Subir docs
+                        </button>
+                      )}
+                    </div>
                   </div>
             ))}
           </div>
@@ -432,7 +620,7 @@ export default function App() {
   </div>
 </div>
 
-      {/* MODAL FLOTANTE */}
+      {/* MODAL FLOTANTE - CREAR CLIENTE */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-8 w-full max-w-md shadow-lg relative text-gray-900">
@@ -512,6 +700,304 @@ export default function App() {
                 {loading ? 'Registrando...' : 'Registrar cliente'}
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL FLOTANTE - SUBIR DOCUMENTOS COMPLETO */}
+      {showUploadModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-lg relative text-gray-900">
+            <button
+              className="absolute top-4 right-4 text-gray-500 hover:text-red-500 text-xl z-10 bg-white rounded-full w-8 h-8 flex items-center justify-center shadow"
+              onClick={() => {
+                setShowUploadModal(false);
+                setSelectedClient(null);
+                resetUploadModal();
+              }}
+            >
+              ×
+            </button>
+            
+            <div className="p-6">
+              <h2 className="text-3xl font-bold mb-2 text-gray-800">Subir documentos</h2>
+              <p className="text-gray-600 mb-6">Sube los documentos de forma segura y rápida</p>
+              
+              {selectedClient && (
+                <div className="mb-6 p-4 bg-gray-100 rounded-lg">
+                  <div className="text-sm text-gray-600 mb-1">Cliente:</div>
+                  <div className="font-semibold text-lg">{obtenerValorSeguro(selectedClient, 'nombreApellido') || 'Sin nombre'}</div>
+                  <div className="text-sm text-gray-600 mt-2">Estado documentación:</div>
+                  <span className={`inline-block px-3 py-1 rounded text-sm font-medium ${
+                    obtenerValorSeguro(selectedClient, 'estadoDocumentacion') === 'aprobado' 
+                      ? 'bg-green-600 text-white' 
+                      : obtenerValorSeguro(selectedClient, 'estadoDocumentacion') === 'pendiente'
+                      ? 'bg-yellow-600 text-white'
+                      : obtenerValorSeguro(selectedClient, 'estadoDocumentacion') === 'revision'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-red-600 text-white'
+                  }`}>
+                    {obtenerValorSeguro(selectedClient, 'estadoDocumentacion') ? obtenerValorSeguro(selectedClient, 'estadoDocumentacion').charAt(0).toUpperCase() + obtenerValorSeguro(selectedClient, 'estadoDocumentacion').slice(1) : 'Sin estado'}
+                  </span>
+                </div>
+              )}
+
+              {uploadError && <div className="mb-4 text-red-600 text-sm bg-red-50 p-3 rounded">{uploadError}</div>}
+              {uploadSuccess && <div className="mb-4 text-green-600 text-sm bg-green-50 p-3 rounded">{uploadSuccess}</div>}
+              
+              <form onSubmit={handleUploadSubmit} className="space-y-6">
+                {/* Sección Cédula */}
+                <div className="bg-gray-50 rounded-xl p-6">
+                  <div className="flex items-center mb-4">
+                    <div className="bg-blue-100 p-2 rounded-full mr-3">
+                      <i className="fas fa-id-card text-blue-600"></i>
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-semibold text-gray-800">Documento de Identidad</h3>
+                      <p className="text-gray-600 text-sm">Sube tu cédula en formato foto o PDF</p>
+                    </div>
+                  </div>
+
+                  {/* Radio buttons */}
+                  <div className="flex gap-3 mb-4">
+                    <label className={`flex items-center p-3 rounded-lg border-2 cursor-pointer transition-all text-sm ${
+                      tipoCedula === 'foto' 
+                        ? 'border-blue-500 bg-blue-50 text-blue-700' 
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}>
+                      <input
+                        type="radio"
+                        name="tipoCedula"
+                        value="foto"
+                        checked={tipoCedula === 'foto'}
+                        onChange={() => setTipoCedula('foto')}
+                        className="sr-only"
+                      />
+                      <i className="fas fa-camera mr-2"></i>
+                      <div>
+                        <div className="font-semibold">Fotografías</div>
+                        <div className="text-xs opacity-75">2 archivos (frente y reverso)</div>
+                      </div>
+                    </label>
+
+                    <label className={`flex items-center p-3 rounded-lg border-2 cursor-pointer transition-all text-sm ${
+                      tipoCedula === 'documento' 
+                        ? 'border-blue-500 bg-blue-50 text-blue-700' 
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}>
+                      <input
+                        type="radio"
+                        name="tipoCedula"
+                        value="documento"
+                        checked={tipoCedula === 'documento'}
+                        onChange={() => setTipoCedula('documento')}
+                        className="sr-only"
+                      />
+                      <i className="fas fa-file-pdf mr-2"></i>
+                      <div>
+                        <div className="font-semibold">Documento PDF</div>
+                        <div className="text-xs opacity-75">1 archivo escaneado</div>
+                      </div>
+                    </label>
+                  </div>
+
+                  {/* Upload area */}
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
+                    <input
+                      type="file"
+                      accept={tipoCedula === 'foto' ? 'image/*' : '.pdf'}
+                      multiple={tipoCedula === 'foto'}
+                      onChange={handleCedulaChange}
+                      className="hidden"
+                      id="cedula-upload"
+                    />
+                    <label htmlFor="cedula-upload" className="cursor-pointer">
+                      <i className="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-2"></i>
+                      <div className="font-semibold text-gray-700 mb-1">
+                        Arrastra archivos aquí o haz clic para seleccionar
+                      </div>
+                      <div className="text-gray-500 text-sm">
+                        {tipoCedula === 'foto' ? 'Máximo 2 imágenes' : 'Solo archivos PDF'}
+                      </div>
+                    </label>
+                  </div>
+
+                  {/* Archivos seleccionados */}
+                  {cedulaFiles.length > 0 && (
+                    <div className="mt-3 space-y-2">
+                      {cedulaFiles.map((file, index) => (
+                        <div key={index} className="flex items-center justify-between bg-white p-2 rounded border">
+                          <div className="flex items-center">
+                            <i className="fas fa-file text-blue-500 mr-2 text-sm"></i>
+                            <span className="text-sm font-medium">{file.name}</span>
+                            <span className="text-xs text-gray-500 ml-2">({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeFile(index, 'cedula')}
+                            className="text-red-500 hover:text-red-700 transition-colors"
+                          >
+                            <i className="fas fa-times"></i>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Sección Audio */}
+                  <div className="bg-gray-50 rounded-xl p-6">
+                    <div className="flex items-center mb-4">
+                      <div className="bg-green-100 p-2 rounded-full mr-3">
+                        <i className="fas fa-file-audio text-green-600"></i>
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-semibold text-gray-800">Archivo de Audio</h3>
+                        <p className="text-gray-600 text-sm">Sube un archivo de audio para verificación (opcional)</p>
+                      </div>
+                    </div>
+
+                    <div className="text-center">
+                      {!audioUrl && (
+                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-green-400 transition-colors">
+                          <input
+                            type="file"
+                            accept="audio/*"
+                            onChange={(e) => {
+                              if (e.target.files && e.target.files[0]) {
+                                const file = e.target.files[0];
+                                setAudioBlob(file);
+                                setAudioUrl(URL.createObjectURL(file));
+                              }
+                            }}
+                            className="hidden"
+                            id="audio-upload"
+                          />
+                          <label htmlFor="audio-upload" className="cursor-pointer">
+                            <i className="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-2"></i>
+                            <div className="font-semibold text-gray-700 mb-1">
+                              Arrastra un archivo de audio aquí o haz clic para seleccionar
+                            </div>
+                            <div className="text-gray-500 text-sm">
+                              Formatos soportados: MP3, WAV, M4A, OGG
+                            </div>
+                          </label>
+                        </div>
+                      )}
+
+                      {audioUrl && (
+                        <div className="bg-white p-4 rounded-lg">
+                          <div className="mb-3">
+                            <i className="fas fa-check-circle text-green-500 text-xl mb-1"></i>
+                            <p className="text-green-600 font-semibold">¡Audio subido exitosamente!</p>
+                          </div>
+                          <audio controls src={audioUrl} className="w-full mb-3" />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setAudioBlob(null);
+                              setAudioUrl(null);
+                            }}
+                            className="text-blue-600 hover:text-blue-800 font-semibold transition-colors"
+                          >
+                            <i className="fas fa-redo mr-1"></i>
+                            Subir otro archivo
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                {/* Sección Comprobantes */}
+                <div className="bg-gray-50 rounded-xl p-6">
+                  <div className="flex items-center mb-4">
+                    <div className="bg-purple-100 p-2 rounded-full mr-3">
+                      <i className="fas fa-receipt text-purple-600"></i>
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-semibold text-gray-800">Comprobantes de Deuda</h3>
+                      <p className="text-gray-600 text-sm">Sube fotos o PDFs de tus comprobantes (opcional)</p>
+                    </div>
+                  </div>
+
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-400 transition-colors">
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*,.pdf"
+                      onChange={handleComprobantesChange}
+                      className="hidden"
+                      id="comprobantes-upload"
+                    />
+                    <label htmlFor="comprobantes-upload" className="cursor-pointer">
+                      <i className="fas fa-folder-open text-3xl text-gray-400 mb-2"></i>
+                      <div className="font-semibold text-gray-700 mb-1">
+                        Selecciona múltiples archivos
+                      </div>
+                      <div className="text-gray-500 text-sm">
+                        Imágenes y PDFs permitidos
+                      </div>
+                    </label>
+                  </div>
+
+                  {comprobantesFiles.length > 0 && (
+                    <div className="mt-3 space-y-2">
+                      <h4 className="font-semibold text-gray-700 text-sm">
+                        Archivos seleccionados ({comprobantesFiles.length})
+                      </h4>
+                      {comprobantesFiles.map((file, index) => (
+                        <div key={index} className="flex items-center justify-between bg-white p-2 rounded border">
+                          <div className="flex items-center">
+                            <i className={`fas ${file.type.includes('pdf') ? 'fa-file-pdf text-red-500' : 'fa-image text-blue-500'} mr-2 text-sm`}></i>
+                            <span className="text-sm font-medium">{file.name}</span>
+                            <span className="text-xs text-gray-500 ml-2">({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeFile(index, 'comprobantes')}
+                            className="text-red-500 hover:text-red-700 transition-colors"
+                          >
+                            <i className="fas fa-times"></i>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Botón de envío */}
+                <div className="text-center pt-4">
+                  <button
+                    type="submit"
+                    disabled={uploadLoading || !cedulaFiles.length}
+                    className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-8 py-3 rounded-lg font-bold transition-all disabled:cursor-not-allowed"
+                  >
+                    {uploadLoading ? (
+                      <>
+                        <i className="fas fa-spinner fa-spin mr-2"></i>
+                        Subiendo... {uploadProgress}%
+                      </>
+                    ) : (
+                      <>
+                        <i className="fas fa-paper-plane mr-2"></i>
+                        Enviar y Guardar
+                      </>
+                    )}
+                  </button>
+
+                  {uploadLoading && (
+                    <div className="mt-3 max-w-md mx-auto">
+                      <div className="bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${uploadProgress}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}
