@@ -324,9 +324,9 @@ export default function App() {
           <div>Cliente</div>
           <div>Ciudad</div>
           <div>Teléfono</div>
-          <div>Fecha de registro</div>
-          <div>Documentación</div>
-          <div>Fase de proceso</div>
+          <div>Fecha registro</div>
+          <div>Documentos</div>
+          <div>Fase proceso</div>
           <div>Comisión generada</div>
         </div>
         {/* Primeros 3 clientes */}
