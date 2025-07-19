@@ -42,6 +42,7 @@ export default function RegistroPage() {
   })
   const [loading, setLoading] = useState<boolean>(false)
   const [error, setError] = useState<string>('')
+  const [generatedId, setGeneratedId] = useState<string>('')
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -124,6 +125,7 @@ export default function RegistroPage() {
     setError('')
     if (!validateForm()) return
     setLoading(true)
+    
     try {
       const userData = {
         nombreApellido: form.nombreApellido.trim(),
@@ -138,15 +140,22 @@ export default function RegistroPage() {
         edad: form.edad,
         contrasena: form.contrasena
       }
+      
       const response = await fetch('/api/registroaliado', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userData),
       })
+      
       const data = await response.json()
+      
       if (!response.ok) {
         throw new Error(data.error || 'Error al registrar usuario')
       }
+      
+      // Mostrar el ID generado al usuario
+      setGeneratedId(data.aliadoId)
+      
       setForm({
         nombreApellido: '',
         cedula: '',
@@ -160,7 +169,10 @@ export default function RegistroPage() {
         edad: 0,
         contrasena: '',
       })
-      alert('¡Usuario registrado exitosamente!')
+      
+      // Mostrar mensaje de éxito con el ID generado
+      alert(`¡Usuario registrado exitosamente!\nTu ID de aliado es: ${data.aliadoId}\nGuarda este ID para futuras referencias.`)
+      
       router.push('/Panel')
     } catch (error) {
       setLoading(false)
@@ -181,6 +193,11 @@ export default function RegistroPage() {
         <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 text-center">
           <h2 className="text-3xl font-bold text-white">Bienvenido Aliado</h2>
           <p className="text-blue-100 mt-2">Completa tus datos para unirte</p>
+          {generatedId && (
+            <div className="mt-3 p-2 bg-green-500/20 rounded-lg">
+              <p className="text-green-200 text-sm font-medium">ID de Aliado: {generatedId}</p>
+            </div>
+          )}
         </div>
 
         {/* Content */}

@@ -9,7 +9,7 @@ export default function Home() {
           <span className="text-[#58e1c1]">●</span> TU REPORTE<span className="text-[#888]">SAS</span>
         </div>
         <a
-          href="/login"
+          href="/loginaliado"
           className="border border-blue-500 text-blue-400 rounded-full px-6 py-2 text-sm hover:bg-blue-500 hover:text-white transition"
         >
           Iniciar Sesion
