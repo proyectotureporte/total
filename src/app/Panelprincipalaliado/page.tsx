@@ -261,14 +261,14 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0b0f19] text-white p-6">
+    <div className="min-h-screen bg-[#0b0f19] text-white p-2 sm:p-4 md:p-6">
       {/* TITULO */}
       <h1 className="text-3xl font-bold mb-8">
         Bienvenido - {capitalizarNombre(user.nombreApellido)} - {user.aliadoId}
       </h1>
 
       {/* CONTADORES */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <div className="bg-[#111827] rounded-lg p-4 flex flex-col items-center">
           <span className="text-lg font-semibold">Cantidad de clientes</span>
           <span className="text-3xl font-bold text-blue-400">{cantidadClientes}</span>
@@ -300,37 +300,38 @@ export default function App() {
       </div>
 
       {/* CLIENTES ACTIVOS + BOTÓN */}
-      <div className="bg-[#111827] rounded-xl p-6 mb-8">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold">Clientes activos</h2>
-          <button
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold transition"
-            onClick={() => setShowModal(true)}
-          >
-            Crear cliente
-          </button>
+<div className="bg-[#111827] rounded-xl p-6 mb-8">
+  <div className="flex justify-between items-center mb-4">
+    <h2 className="text-2xl font-bold">Clientes activos</h2>
+    <button
+      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold transition"
+      onClick={() => setShowModal(true)}
+    >
+      Crear cliente
+    </button>
+  </div>
+  
+  {cantidadClientes === 0 ? (
+    <div className="text-center py-8 text-gray-400">
+      No hay clientes registrados aún
+    </div>
+  ) : (
+    <>
+      {/* WRAPPER SCROLL HORIZONTAL SOLO EN MOVIL */}
+      <div className="overflow-x-auto md:overflow-x-visible">
+        {/* Encabezados */}
+        <div className="min-w-[700px] grid grid-cols-7 gap-2 font-semibold text-gray-300 border-b border-gray-700 pb-2 mb-2 text-sm">
+          <div>Cliente</div>
+          <div>Ciudad</div>
+          <div>Teléfono</div>
+          <div>Fecha de registro</div>
+          <div>Documentación</div>
+          <div>Fase de proceso</div>
+          <div>Comisión generada</div>
         </div>
-        
-        {cantidadClientes === 0 ? (
-          <div className="text-center py-8 text-gray-400">
-            No hay clientes registrados aún
-          </div>
-        ) : (
-          <>
-            {/* Encabezados */}
-            <div className="grid grid-cols-7 gap-2 font-semibold text-gray-300 border-b border-gray-700 pb-2 mb-2 text-sm">
-              <div>Cliente</div>
-              <div>Ciudad</div>
-              <div>Teléfono</div>
-              <div>Fecha de registro</div>
-              <div>Documentación</div>
-              <div>Fase de proceso</div>
-              <div>Comisión generada</div>
-            </div>
-            
-            {/* Primeros 3 clientes */}
-            {primerosClientes.map((c, idx) => (
-              <div key={c._id || `cliente-${idx}`} className="grid grid-cols-7 gap-2 py-2 border-b border-gray-800 text-sm">
+        {/* Primeros 3 clientes */}
+        {primerosClientes.map((c, idx) => (
+          <div key={c._id || `cliente-${idx}`} className="min-w-[700px] grid grid-cols-7 gap-2 py-2 border-b border-gray-800 text-sm">
                 <div className="font-medium">{c.nombreApellido || 'Sin nombre'}</div>
                 <div>{c.ciudad || '-'}</div>
                 <div>{c.celular || '-'}</div>
@@ -359,13 +360,12 @@ export default function App() {
                 </div>
                 <div className="font-semibold text-green-400">{Number(c.comision) || 0}€</div>
               </div>
-            ))}
-            
-            {/* Resto de clientes en scroll */}
-            {restoClientes.length > 0 && (
-              <div className="max-h-32 overflow-y-auto mt-2">
-                {restoClientes.map((c, idx) => (
-                  <div key={c._id || `resto-${idx}`} className="grid grid-cols-7 gap-2 py-2 border-b border-gray-800 text-sm">
+        ))}
+        {/* Resto de clientes en scroll vertical */}
+        {restoClientes.length > 0 && (
+          <div className="max-h-32 overflow-y-auto mt-2">
+            {restoClientes.map((c, idx) => (
+              <div key={c._id || `resto-${idx}`} className="min-w-[700px] grid grid-cols-7 gap-2 py-2 border-b border-gray-800 text-sm">
                     <div className="font-medium">{c.nombreApellido || 'Sin nombre'}</div>
                     <div>{c.ciudad || '-'}</div>
                     <div>{c.celular || '-'}</div>
@@ -394,25 +394,28 @@ export default function App() {
                     </div>
                     <div className="font-semibold text-green-400">{Number(c.comision) || 0}€</div>
                   </div>
-                ))}
-              </div>
-            )}
-          </>
+            ))}
+          </div>
         )}
       </div>
+    </>
+  )}
+</div>
 
       {/* TRANSACCIONES */}
-      <div className="bg-[#111827] rounded-xl p-6">
+      <div className="bg-[#111827] rounded-xl p-6 mt-8">
         <h2 className="text-2xl font-bold mb-4">Transacciones</h2>
-        <div className="grid grid-cols-5 gap-2 font-semibold text-gray-300 border-b border-gray-700 pb-2 mb-2 text-sm">
-          <div>Fecha de pago</div>
-          <div>Monto</div>
-          <div>Método de pago</div>
-          <div>Titular</div>
-          <div>Estado</div>
+        {/* WRAPPER SCROLL HORIZONTAL SOLO EN MOVIL */}
+        <div className="overflow-x-auto md:overflow-x-visible">
+          <div className="min-w-[500px] grid grid-cols-5 gap-2 font-semibold text-gray-300 border-b border-gray-700 pb-2 mb-2 text-sm">
+            <div>Fecha de pago</div>
+            <div>Monto</div>
+            <div>Método de pago</div>
+            <div>Titular</div>
+            <div>Estado</div>
         </div>
-        {transacciones.map((t, idx) => (
-          <div key={idx} className="grid grid-cols-5 gap-2 py-2 border-b border-gray-800 text-sm">
+            {transacciones.map((t, idx) => (
+          <div key={idx} className="min-w-[500px] grid grid-cols-5 gap-2 py-2 border-b border-gray-800 text-sm">
             <div>{t.fechaPago}</div>
             <div>{t.monto}€</div>
             <div>{t.metodo}</div>
@@ -425,8 +428,9 @@ export default function App() {
               </span>
             </div>
           </div>
-        ))}
-      </div>
+    ))}
+  </div>
+</div>
 
       {/* MODAL FLOTANTE */}
       {showModal && (
